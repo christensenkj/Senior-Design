@@ -319,3 +319,68 @@ void receive_from_server(uint8_t sn, uint16_t port) {
     // close socket and disconnect
     stop_server(sn);
 }
+
+
+/*
+ * Handler for all socket transactions
+ */
+void net_process_socket_receiver(uint8_t sn, uint16_t port)
+{
+    unsigned char state = SOCK_CLOSED;
+    unsigned short len = 0;
+
+    state = getSn_SR(sn);
+    switch (state) {
+        case SOCK_INIT:
+            listen(sn);
+            break;
+        case SOCK_ESTABLISHED:
+//            if (getSn_SR(sn) & Sn_IR_CON) {
+//                set_sock_interrupt_status(sock, Sn_IR_CON);
+//            }
+            len = getSn_RX_RSR(sn);
+            if (len > 0) {
+                /* process the recv data */
+                receive_cmd(sn, len);
+            }
+            break;
+        case SOCK_CLOSE_WAIT:
+            stop_server(sn);
+            break;
+        case SOCK_CLOSED:
+            socket(sn, Sn_MR_TCP, port, 0x00);
+            break;
+        default:
+            break;
+    }
+}
+
+/*
+ * Handler for all socket transactions
+ */
+void net_process_socket_sender(uint8_t sn, uint16_t port)
+{
+    unsigned char state = SOCK_CLOSED;
+    unsigned short len = 100;
+
+    state = getSn_SR(sn);
+    switch (state) {
+        case SOCK_INIT:
+            listen(sn);
+            break;
+        case SOCK_ESTABLISHED:
+//            if (getSn_SR(sn) & Sn_IR_CON) {
+//                set_sock_interrupt_status(sock, Sn_IR_CON);
+//            }
+            send_data_onitsown(sn, len);
+            break;
+        case SOCK_CLOSE_WAIT:
+            stop_server(sn);
+            break;
+        case SOCK_CLOSED:
+            socket(sn, Sn_MR_TCP, port, 0x00);
+            break;
+        default:
+            break;
+    }
+}

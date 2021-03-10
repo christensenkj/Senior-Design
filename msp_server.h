@@ -39,5 +39,7 @@ void receive_cmd(uint8_t sn, uint16_t len);
 void send_data_onitsown(uint8_t sn, uint16_t len);
 void send_update(uint8_t sn, uint16_t port);
 void receive_from_server(uint8_t sn, uint16_t port);
+void net_process_socket_sender(uint8_t sn, uint16_t port);
+void net_process_socket_receiver(uint8_t sn, uint16_t port);
 
 #endif /* MSP_SERVER_H_ */

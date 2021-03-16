@@ -105,10 +105,10 @@ void i2c_send_toggle() {
     // 7-bit addressing mode
     UCB0CTL0 &= ~UCSLA10;
     // send stop bit prematurely
-    UCB0CTL1 |= UCTXSTP;
+//    UCB0CTL1 |= UCTXSTP;
     // send start bit
     UCB0CTL1 |= UCTXSTT;
-    while (UCB0CTL1 & UCTXSTT);
+//    while (UCB0CTL1 & UCTXSTT);
 }
 
 //void i2c_receive_outlet() {
@@ -189,95 +189,95 @@ void format_strings() {
 }
 
 
-// I2C routine
-#pragma vector = USCI_B1_VECTOR
-__interrupt void USCI_B1_ISR(void)
-{
-  switch(__even_in_range(UCB0IV,12))
-  {
-  // No interrupts
-  case  0: break;
-  // ALIFG
-  case  2: break;
-  // NACKIFG
-  case  4:
-      // Send stop condition
-      UCB0CTL1 |= UCTXSTP;
-      // Clear RX flag and TX flag
-      UCB0IFG &= ~(UCRXIFG + UCTXIFG);
-      // reset i2c status
-      toggle_status = 0;
-      update_status = 0;
-      break;
-  // Start interrupts STTIFG
-  case  6: break;
-  // Stop interrupt STPIFG
-  case  8: break;
-  // RX interrupt: RXIFG
-  case 10:
-      // If not the last or second to last expected data packet
-      if (RXDataCtr < (BUFLEN-2))
-      {
-          // Read the RX buffer
-          RXData = UCB0RXBUF;
-          // Shift the local global array and put the RX buffer into it
-          *(((uint8_t*)data) + RXDataCtr) = RXData;
-          // Increment the number of bytes received counter
-          RXDataCtr++;
-      }
-      // If second to last byte, send a stop STP along with reading the buffer
-      else if (RXDataCtr == (BUFLEN-2))
-      {
-          RXData = UCB0RXBUF;
-          UCB0CTL1 |= UCTXSTP;
-          *(((uint8_t*)data) + RXDataCtr) = RXData;
-          RXDataCtr++;
-      }
-      // If last byte, just receive the buffer
-      else if (RXDataCtr == (BUFLEN-1))
-      {
-          RXData = UCB0RXBUF;
-          *(((uint8_t*)data) + RXDataCtr) = RXData;
-          RXDataCtr++;
-          UCB0IFG &= ~UCRXIFG;
-          // reset i2c status
-          update_status = 0;
-      }
-      break;
-  // Transmit interrupt TXIFG
-  case 12:
-
-      if (TXDataCtr < 1) {
-          // Load data into TX buffer
-          UCB0TXBUF = TXData;
-          // increment the bytes sent counter
-          TXDataCtr++;
-          UCB0IFG &= ~UCTXIFG;
-          // toggle outlet status
-          outlet_status = !outlet_status;
-          // update the LCD screens with the new information
-          refresh_screen_status = 1;
-          // reset i2c status
-          toggle_status = 0;
-          P4DIR |= BIT7;
-          P4OUT ^= BIT7;
-      }
-      // If the byte was sent, send a stop condition
-      else {
-          UCB0CTL1 |= UCTXSTP;
-          UCB0IFG &= ~UCTXIFG;
-          // toggle outlet status
-          outlet_status = !outlet_status;
-          // update the LCD screens with the new information
-          refresh_screen_status = 1;
-          // reset i2c status
-          toggle_status = 0;
-
-      }
-      break;
-  default: break;
-  }
-}
+//// I2C routine
+//#pragma vector = USCI_B1_VECTOR
+//__interrupt void USCI_B1_ISR(void)
+//{
+//  switch(__even_in_range(UCB0IV,12))
+//  {
+//  // No interrupts
+//  case  0: break;
+//  // ALIFG
+//  case  2: break;
+//  // NACKIFG
+//  case  4:
+//      // Send stop condition
+//      UCB0CTL1 |= UCTXSTP;
+//      // Clear RX flag and TX flag
+//      UCB0IFG &= ~(UCRXIFG + UCTXIFG);
+//      // reset i2c status
+//      toggle_status = 0;
+//      update_status = 0;
+//      break;
+//  // Start interrupts STTIFG
+//  case  6: break;
+//  // Stop interrupt STPIFG
+//  case  8: break;
+//  // RX interrupt: RXIFG
+//  case 10:
+//      // If not the last or second to last expected data packet
+//      if (RXDataCtr < (BUFLEN-2))
+//      {
+//          // Read the RX buffer
+//          RXData = UCB0RXBUF;
+//          // Shift the local global array and put the RX buffer into it
+//          *(((uint8_t*)data) + RXDataCtr) = RXData;
+//          // Increment the number of bytes received counter
+//          RXDataCtr++;
+//      }
+//      // If second to last byte, send a stop STP along with reading the buffer
+//      else if (RXDataCtr == (BUFLEN-2))
+//      {
+//          RXData = UCB0RXBUF;
+//          UCB0CTL1 |= UCTXSTP;
+//          *(((uint8_t*)data) + RXDataCtr) = RXData;
+//          RXDataCtr++;
+//      }
+//      // If last byte, just receive the buffer
+//      else if (RXDataCtr == (BUFLEN-1))
+//      {
+//          RXData = UCB0RXBUF;
+//          *(((uint8_t*)data) + RXDataCtr) = RXData;
+//          RXDataCtr++;
+//          UCB0IFG &= ~UCRXIFG;
+//          // reset i2c status
+//          update_status = 0;
+//      }
+//      break;
+//  // Transmit interrupt TXIFG
+//  case 12:
+//
+//      if (TXDataCtr < 1) {
+//          // Load data into TX buffer
+//          UCB0TXBUF = TXData;
+//          // increment the bytes sent counter
+//          TXDataCtr = 0;
+//          UCB0IFG &= ~UCTXIFG;
+//          // toggle outlet status
+//          outlet_status = !outlet_status;
+//          // update the LCD screens with the new information
+//          refresh_screen_status = 1;
+//          // reset i2c status
+//          toggle_status = 0;
+//          P4DIR |= BIT7;
+//          P4OUT ^= BIT7;
+//      }
+//      // If the byte was sent, send a stop condition
+//      else {
+//          UCB0CTL1 |= UCTXSTP;
+//          UCB0IFG &= ~UCTXIFG;
+//          // toggle outlet status
+//          outlet_status = !outlet_status;
+//          // update the LCD screens with the new information
+//          refresh_screen_status = 1;
+//          // reset i2c status
+//          toggle_status = 0;
+//
+//      }
+//      break;
+//  default: break;
+//  }
+//}
 
 // I2C routine
 #pragma vector = USCI_B0_VECTOR
@@ -342,20 +342,22 @@ __interrupt void USCI_B0_ISR(void)
           UCB0TXBUF = TXData;
           // increment the bytes sent counter
           TXDataCtr++;
-          UCB0IFG &= ~UCTXIFG;
           // toggle outlet status
-          outlet_status = !outlet_status;
+//          outlet_status = !outlet_status;
           // update the LCD screens with the new information
-          refresh_screen_status = 1;
+//          refresh_screen_status = 1;
           // reset i2c status
-          toggle_status = 0;
-          P4DIR |= BIT7;
-          P4OUT ^= BIT7;
+//          toggle_status = 0;
+//          P4DIR |= BIT7;
+//          P4OUT ^= BIT7;
       }
       // If the byte was sent, send a stop condition
       else {
+          // Load data into TX buffer
+//          UCB0TXBUF = TXData;
           UCB0CTL1 |= UCTXSTP;
           UCB0IFG &= ~UCTXIFG;
+          TXDataCtr = 0;
           // toggle outlet status
           outlet_status = !outlet_status;
           // update the LCD screens with the new information

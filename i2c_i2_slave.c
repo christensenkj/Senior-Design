@@ -16,6 +16,8 @@ volatile uint16_t TXDataCtr;
 volatile uint16_t RXDataCtr;
 uint8_t toggle_status;
 uint8_t outlet_status;
+uint8_t ADC_conversion;
+uint8_t i2c_in_process;
 
 void toggle_outlet(void);
 void config_relay_pins(void);
@@ -42,24 +44,36 @@ int main(void)
 	UCB0CTL1 &= ~UCSWRST; // eUSCI_B in operational state
 //	UCB0IFG &= ~UCCLTOIFG;  // Clear the IFG for Clock timeout (Zach)
 //    UCB0IE |= UCRXIE0 |  UCTXIE | UCSTPIE | UCCLTOIE;                  // Enable Start, RX, and Stop interrupts (Zach: and Timeout)
-    UCB0IE |= UCRXIE0 |  UCTXIE | UCSTPIE;                  // Enable Start, RX, and Stop interrupts (Zach: and Timeout)
+    UCB0IE |= UCRXIE0 | UCTXIE | UCSTPIE;                  // Enable Start, RX, and Stop interrupts (Zach: and Timeout)
+//    UCB0IE |= UCRXIE0 | UCSTPIE;                  // Enable Start, RX, and Stop interrupts (Zach: and Timeout)
 
     TXDataCtr = 0;
     toggle_status = 0;
     outlet_status = 1;
-
-    // configure timer A0
-    config_timerA0();
+    ADC_conversion = 0;
+    i2c_in_process = 0;
 
     config_relay_pins();
 
     adc_config(ADC_OVERFLOW_IE_DIS,ADC_CHANNEL3);               // Configure ADC Channel 3 (Voltage) and disable overflow interrupt
     adc_config(ADC_OVERFLOW_IE_DIS,ADC_CHANNEL0);               // Configure ADC Channel 3 (Voltage) and disable overflow interrupt
 
+    // configure timer A0
+    config_timerA0();
+
     __bis_SR_register(GIE);     // Enter LPM0 w/ interrupts
 
 	while(1) {
-        if (toggle_status) {
+//	    if (ADC_conversion && !(i2c_in_process)) {
+        if (ADC_conversion) {
+	        TA0CCTL0 &= ~CCIE;
+	        ADC_start(ADC_CHANNEL3);
+	        ADC_start(ADC_CHANNEL0);
+	        TA0CCTL0 |= CCIE;
+	        ADC_conversion = 0;
+	    }
+//        if (toggle_status && !(i2c_in_process)) {
+        if (toggle_status && !(i2c_in_process)) {
             toggle_outlet();
             toggle_status = 0;
         }
@@ -86,6 +100,7 @@ void config_relay_pins() {
 
 #pragma vector = USCI_B0_VECTOR
 __interrupt void USCI_B0_ISR(void) {
+//    i2c_in_process = 1;
     SD24CCTL0 &= ~SD24IE;
     SD24CCTL1 &= ~SD24IE;
     SD24CCTL2 &= ~SD24IE;
@@ -105,6 +120,7 @@ __interrupt void USCI_B0_ISR(void) {
             SD24CCTL2 |= SD24IE;
             SD24CCTL3 |= SD24IE;
             UCB0IFG &= ~(UCTXIFG + UCRXIFG);
+//            i2c_in_process = 0;
             break;
         case 0x0a: // Vector 10: RXIFG3 break;
         case 0x0c: // Vector 14: TXIFG3 break;
@@ -159,8 +175,5 @@ __interrupt void USCI_B0_ISR(void) {
 #pragma vector=TIMER0_A0_VECTOR
 __interrupt void Timer_A0 (void)
 {
-    ADC_start(ADC_CHANNEL3);
-    ADC_start(ADC_CHANNEL0);
-//    ADC_start(ADC_CHANNEL2);
-//    ADC_start(ADC_CHANNEL3);
+    ADC_conversion = 1;
 }

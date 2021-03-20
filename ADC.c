@@ -8,6 +8,10 @@
 #include "ADC.h"
 
 #define BUFLEN      512
+static uint8_t buf_ptr_0;
+static uint8_t buf_ptr_1;
+static uint8_t buf_ptr_2;
+static uint8_t buf_ptr_3;
 
 static void internal_config_adc(ADC_CONFIG_STRUCT *config);
 static void write_ADC_buffer0(void);
@@ -41,17 +45,21 @@ void internal_config_adc(ADC_CONFIG_STRUCT *config) {
     }
     // Choose Channel
     if (Channel == ADC_CHANNEL0)  {
-        SD24CCTL0 |= SD24SNGL + SD24OSR_256 + SD24DF + SD24IE;   // Continuous conversion, Over-sampling ratio 64, 2s compliment format, enable data interrupt for SD24 (auto clear)
+        SD24CCTL0 |= SD24SNGL + SD24OSR_32 + SD24DF + SD24IE;   // Single conversion, Over-sampling ratio 64, 2s compliment format, enable data interrupt for SD24 (auto clear)
         SD24INCTL0 |= SD24GAIN_1 + SD24INCH_0;                               // Gain of 1
+        buf_ptr_0 = 64;
     } else if (Channel == ADC_CHANNEL1) {
-        SD24CCTL1 |= SD24SNGL + SD24OSR_256 + SD24DF + SD24IE;   // Continuous conversion, Over-sampling ratio 64, 2s compliment format, enable data interrupt for SD24 (auto clear)
+        SD24CCTL1 |= SD24SNGL + SD24OSR_256 + SD24DF + SD24IE;   // Single conversion, Over-sampling ratio 64, 2s compliment format, enable data interrupt for SD24 (auto clear)
         SD24INCTL1 |= SD24GAIN_1 + SD24INCH_0;                               // Gain of 1
+        buf_ptr_1 = 0;
     } else if (Channel == ADC_CHANNEL2) {
-        SD24CCTL2 |= SD24SNGL + SD24OSR_256 + SD24DF + SD24IE;   // Continuous conversion, Over-sampling ratio 64, 2s compliment format, enable data interrupt for SD24 (auto clear)
+        SD24CCTL2 |= SD24SNGL + SD24OSR_256 + SD24DF + SD24IE;   // Single conversion, Over-sampling ratio 64, 2s compliment format, enable data interrupt for SD24 (auto clear)
         SD24INCTL2 |= SD24GAIN_1 + SD24INCH_0;                               // Gain of 1
+        buf_ptr_2 = 0;
     } else if (Channel == ADC_CHANNEL3) {
-        SD24CCTL3 |= SD24SNGL + SD24OSR_256 + SD24DF + SD24IE;   // Continuous conversion, Over-sampling ratio 64, 2s compliment format, enable data interrupt for SD24 (auto clear)
+        SD24CCTL3 |= SD24SNGL + SD24OSR_32 + SD24DF + SD24IE;   // Single conversion, Over-sampling ratio 64, 2s compliment format, enable data interrupt for SD24 (auto clear)
         SD24INCTL3 |= SD24GAIN_1 + SD24INCH_0;                               // Gain of 1
+        buf_ptr_3 = 0;
     } else {
         while(1);
     }
@@ -60,16 +68,16 @@ void internal_config_adc(ADC_CONFIG_STRUCT *config) {
 void ADC_start(uint8_t adcChannel) {
     switch (adcChannel) {
         case (ADC_CHANNEL0):
-            SD24CCTL0 |= SD24SC;    // Enable ADC Conversion on Channel 0
+            SD24CCTL0 |= SD24SC;    // Start ADC Conversion on Channel 0
             break;
         case (ADC_CHANNEL1):
-            SD24CCTL1 |= SD24SC;    // Enable ADC Conversion on Channel 1
+            SD24CCTL1 |= SD24SC;    // Start ADC Conversion on Channel 1
             break;
         case (ADC_CHANNEL2):
-            SD24CCTL2 |= SD24SC;    // Enable ADC Conversion on Channel 2
+            SD24CCTL2 |= SD24SC;    // Start ADC Conversion on Channel 2
             break;
         case (ADC_CHANNEL3):
-            SD24CCTL3 |= SD24SC;    // Enable ADC Conversion on Channel 3
+            SD24CCTL3 |= SD24SC;    // Start ADC Conversion on Channel 3
             break;
         default:
             break;
@@ -78,38 +86,43 @@ void ADC_start(uint8_t adcChannel) {
 
 #pragma vector = SD24_VECTOR
 __interrupt void SD24_ISR(void) {
-    _disable_interrupts();
+    TA0CCTL0 &= ~CCIE;
     switch (SD24IV) {
     case (SD24IV_4):
         write_ADC_buffer0();
-        SD24CCTL0 |= SD24SC;
+//        SD24CCTL0 &= ~SD24SC;
         break;
     case (SD24IV_6):
         write_ADC_buffer1();
-        SD24CCTL1 |= SD24SC;
+//        SD24CCTL1 &= ~SD24SC;
         break;
     case (SD24IV_8):
         write_ADC_buffer2();
-        SD24CCTL2 |= SD24SC;
+//        SD24CCTL2 &= ~SD24SC;
         break;
     case (SD24IV_A):
         write_ADC_buffer3();
-        SD24CCTL3 |= SD24SC;
+//        SD24CCTL3 &= ~SD24SC;
         break;
     default:
         break;
     }
-    _enable_interrupts();
+    TA0CCTL0 |= CCIE;
 }
 
 void write_ADC_buffer0() {
-    SD24CCTL0 &= ~SD24LSBACC;
-    uint32_t tempRead_upper = SD24MEM0 & 0xFF00;
-    SD24CCTL0 |= SD24LSBACC;
+//    SD24CCTL0 &= ~SD24LSBACC;
+//    uint32_t tempRead_upper = SD24MEM0 & 0xFF00;
+//    SD24CCTL0 |= SD24LSBACC;
     uint32_t tempRead_lower = SD24MEM0;
-    int32_t tempRead = (tempRead_upper << 8) | tempRead_lower;
-    shift_circ_buf0(circularBuffer, BUFLEN/4);
-    circularBuffer[64] = tempRead;
+//    int32_t tempRead = (tempRead_upper << 8) | tempRead_lower;
+    //shift_circ_buf0(circularBuffer, BUFLEN/4);
+//    circularBuffer[64] = tempRead;
+    circularBuffer[buf_ptr_0] = tempRead_lower;
+    buf_ptr_0++;
+    if (buf_ptr_0 == 128) {
+        buf_ptr_0 = 64;
+    }
 }
 
 void write_ADC_buffer1() {
@@ -133,13 +146,18 @@ void write_ADC_buffer2() {
 }
 
 void write_ADC_buffer3() {
-    SD24CCTL3 &= ~SD24LSBACC;
-    uint32_t tempRead_upper = SD24MEM3 & 0xFF00;
-    SD24CCTL3 |= SD24LSBACC;
+//    SD24CCTL3 &= ~SD24LSBACC;
+//    uint32_t tempRead_upper = SD24MEM3 & 0xFF00;
+//    SD24CCTL3 |= SD24LSBACC;
     uint32_t tempRead_lower = SD24MEM3;
-    int32_t tempRead = (tempRead_upper << 8) | tempRead_lower;
-    shift_circ_buf3(circularBuffer, BUFLEN/4);
-    circularBuffer[0] = tempRead;
+//    int32_t tempRead = (tempRead_upper << 8) | tempRead_lower;
+//    shift_circ_buf3(circularBuffer, BUFLEN/4);
+//    circularBuffer[0] = tempRead;
+    circularBuffer[buf_ptr_3] = tempRead_lower;
+    buf_ptr_3++;
+    if (buf_ptr_3 == 64) {
+        buf_ptr_0 = 0;
+    }
 }
 
 void shift_circ_buf0(uint32_t *buf, unsigned int size) {

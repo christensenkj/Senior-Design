@@ -5,19 +5,24 @@
  * Configure the pins to be used for SPI communication over USCI
  */
 int msp_config_spi_pins() {
-  // set SCLK on P2.7
-  P2SEL |= SCLK_PIN;
-  P2DIR |= SCLK_PIN;
-  // set SOMI on P3.4
-  P3SEL |= SOMI_PIN;
-  // set SIMO on P3.3
-  P3SEL |= SIMO_PIN;
-  P3DIR |= SIMO_PIN;
-  // set wiznet reset pin on P1.5
-  P1DIR |= RST_WIZ_PIN;
-  // deselect wiznet 2.0
-  P2DIR |= CS_WIZ_PIN;
-  P2DIR |= CS_MEM_PIN;
+  // set SCLK
+  SCLK_SEL |= SCLK_PIN;
+  SCLK_DIR |= SCLK_PIN;
+  // set SOMI
+  SOMI_SEL |= SOMI_PIN;
+  // set SIMO
+  SIMO_SEL |= SIMO_PIN;
+  SIMO_DIR |= SIMO_PIN;
+  // set wiznet reset pin
+  RST_WIZ_DIR |= RST_WIZ_PIN;
+  // deselect wiznet
+  CS_WIZ_DIR |= CS_WIZ_PIN;
+  // Configure pin for wiznet interrupts
+  INT_WIZ_DIR |= INT_WIZ_PIN;
+  INT_WIZ_REN |= INT_WIZ_PIN;
+  INT_WIZ_OUT |= INT_WIZ_PIN;
+  INT_WIZ_IES |= INT_WIZ_PIN;
+  INT_WIZ_IE |= INT_WIZ_PIN;
 
   return 0;
 }
@@ -26,6 +31,8 @@ int msp_config_spi_pins() {
 /*
  * Configure the USCI peripheral
  */
+
+#ifdef DEV_KIT
 int msp_config_usci()
 {
   // software reset enabled... USCI logic held in reset state
@@ -47,7 +54,31 @@ int msp_config_usci()
 
   return 0;
 }
+#endif
 
+#ifndef DEV_KIT
+int msp_config_usci()
+{
+  // software reset enabled... USCI logic held in reset state
+  UCB1CTL1 |= UCSWRST;
+  // data captured on first clk edge, changed on next clk edge; msb sent and receive first; master mode; synchronous mode
+  UCB1CTL0 |= UCCKPH + UCMSB + UCMST + UCSYNC;
+  // use SMCLK as clock
+  UCB1CTL1 |= UCSSEL_2;
+  // divide SMCLK by 2
+  UCB1BR0 |= 0x02;
+  // no change to UCB1BR1 register
+  UCB1BR1 = 0;
+  // no change in modulation register
+//  UCB1MCTL = 0;
+  // turn off software reset mode... release the USCI for operation
+  UCB1CTL1 &= ~UCSWRST;
+
+  // Don't enable interrupts yet: just get it working with polling
+
+  return 0;
+}
+#endif
 
 /*
  * Configure the mps430's clock

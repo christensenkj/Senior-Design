@@ -2,205 +2,169 @@
 #include "w5500.h"
 #include "msp_config.h"
 #include "msp_server.h"
-#include "LCD.h"
-#include "in_person_UI.h"
 #include "i2c.h"
-
-// define buttons
-#define SW_1    BIT1
-#define SW_2    BIT1
-
-// counter for proof of concept for placeholder for temperature, humidity, voltage, current, and power values
-uint8_t poc_counter = 48;
-uint8_t screen_state;
-
+#include "math_engine.h"
+#include "strings.h"
 
 // server network characteristics
 const uint8_t sourceIP[4] = {192, 168, 1, 254}; // local IP of msp430
 const uint8_t gatewayIP[4] = {192, 168, 1, 1}; // gateway IP
 const uint8_t subnetMask[4] = {255, 255, 255, 0}; // subnet mask
 
-// define an error code function using P4.7 LED
-void blink_error_code(void);
+// flag for timer interrupt
+uint8_t connection_time_A0;
+uint8_t connection_time_A1;
+
+// i2c variables
+extern uint8_t screen_state;
+extern uint8_t outlet_status;
+extern uint8_t button_state;
+extern uint8_t display_status;
+extern uint8_t toggle_status;
+extern uint8_t update_status;
+extern uint8_t refresh_screen_status;
+
+// i2c addresses of outlet board mcus
+#define NUM_I2_MCU  2
+// store the addresses of the outlet board mcus
+uint8_t i2_addrs[NUM_I2_MCU] = {0x33, 0x44};
+// store an array of the structs that keep track of outlet info for each outlet board mcu
+struct outlet_struct outlet_infos[NUM_I2_MCU];
+// store a struct to hold temperature and humidity data
+struct th_struct th_info;
+
 void send_update(uint8_t sn, uint16_t port);
-void receive_from_server(uint8_t sn, uint16_t port);
+void start_timerA0(void);
+void stop_timerA0(void);
+void start_timerA1(void);
+void stop_timerA1(void);
+void stop_watchdog(void);
+
 
 int main(void) {
     // stop the watchdog timer
-     WDTCTL = WDTPW | WDTHOLD;
-
-    // configure timer A
-    TA0CCTL0 = CCIE;                      // CCR0 interrupt enabled
-    TA0CTL = TASSEL_1 + MC_1 + ID_3;      // SMCLK/8, upmode
-    TA0CCR0 =  20480/2;                     // Interrupt once every 5 seconds
-
-//    TA1CCTL0 = CCIE;                      // CCR0 interrupt enabled
-//    TA1CTL = TASSEL_1 + MC_1 + ID_3;      // SMCLK/8, upmode
-//    TA1CCR0 =  10;                     // Interrupt once every 5 seconds
-
-    //configure the pins
-
-    // initialize buttons with interrupts
-    P1DIR &= ~SW_1;                       // Set SW pin -> Input
-    P1REN |= SW_1;                        // Enable Resistor for SW pin
-    P1OUT |= SW_1;                        // Select Pull Up for SW pin
-    P1IES &= ~SW_1;                       // Select Interrupt on Rising Edge
-    P1IE |= SW_1;                         // Enable Interrupt on SW pin
-
-    P2DIR &= ~SW_2;                       // Set SW pin -> Input
-    P2REN |= SW_2;                        // Enable Resistor for SW pin
-    P2OUT |= SW_2;                        // Select Pull Up for SW pin
-    P2IES &= ~SW_2;                       // Select Interrupt on Rising Edge
-    P2IE |= SW_2;                         // Enable Interrupt on SW pin
+    stop_watchdog();
 
     // configure the msp430 clock
     if (msp_config_clock() != 0) {
         // error code
-        blink_error_code();
+       while(1);
     }
 
     //configure the pins
     if (msp_config_spi_pins() != 0) {
         // error code
-        blink_error_code();
+        while(1);
     }
 
     // configure usci controller for SPI
     if (msp_config_usci() != 0) {
         // error code
-        blink_error_code();
+        while(1);
     }
 
-    // turn on RED LED to indicate reaching this far
-    P1DIR |= BIT0;
-    P1OUT |= BIT0;
-
+    // reset the w5500
     reset_w5500();
+    // configure the w5500
     w5500_config(sourceIP, gatewayIP, subnetMask);
+    // configure the i2c peripheral
+    i2c_init();
+    // initialize the outlet status
+    outlet_status = 1;
+    button_state = 0;
+    toggle_status = 0;
+    display_status = 0;
+    update_status = 0;
+    refresh_screen_status = 0;
 
-    lcdInit();// Initialize LCD
-
-    screen_state = INIT;
-    lcdClear();
-    display_screen(screen_state);
-    __delay_cycles(50000000);
-    lcdClear();
-    screen_state = HOME_1;
-    display_screen(screen_state);
-
-    init_i2c();
-
-    _enable_interrupts();
-
-    // reset the W5500 after the SPI communication is set up on the msp430
-    while(1){
-//        send_update(0, 200);
-//        receive_from_server(1, 201);
-    }
-}
-
-
-
-void blink_error_code() {
+    // configure and start the timerA0
+    start_timerA0();
+    start_timerA1();
     P4DIR |= BIT7;
     P4OUT |= BIT7;
-    // toggle P4.7 LED
+
+    // flag to indicate timer interrupt
+    connection_time_A0 = 0;
+    connection_time_A1 = 0;
+
+    // enable interrupts globally
+    _enable_interrupts();
+
+    // main while loop
     while(1) {
-        P4OUT ^= BIT7;
-        __delay_cycles(500000);
+        // handle updates
+        if (update_status) {
+            TA0CCTL0 &= ~CCIE;
+            TA1CCTL0 &= ~CCIE;
+            // get all info from outlets via i2c
+            volatile unsigned int i;
+            for (i = 0; i++; i < NUM_I2_MCU) {
+                i2c_receive_outlet(i2_addrs[i]);
+                get_outlet_info(&outlet_infos[i]);
+            }
+            // get temp/hum information via i2c
+            i2c_receive_th();
+            get_th_info(&th_info);
+            // wait for the update to finish
+            while(update_status);
+            TA0CCTL0 |= CCIE;
+            TA1CCTL0 |= CCIE;
+            // update the strings
+            format_strings(outlet_infos, &th_info);
+        }
+        // handle timer interrupt for out bound web server
+        if (connection_time_A0) {
+            TA0CCTL0 &= ~CCIE;
+            TA1CCTL0 &= ~CCIE;
+            net_process_socket_sender(0, 200);
+            TA0CCTL0 |= CCIE;
+            TA1CCTL0 |= CCIE;
+            connection_time_A0 = 0;
+        }
+        // handle timer interrupt for in bound web server
+        if (connection_time_A1) {
+            P1DIR |= BIT0;
+            P1OUT ^= BIT0;
+            TA0CCTL0 &= ~CCIE;
+            TA1CCTL0 &= ~CCIE;
+            net_process_socket_receiver(1, 201);
+            TA0CCTL0 |= CCIE;
+            TA1CCTL0 |= CCIE;
+            connection_time_A1 = 0;
+        }
     }
 }
 
-void send_update(uint8_t sn, uint16_t port) {
-    // start server with socket 0, port 200
-    start_server(sn, port);
-    // wait for connection on socket 0
-    if (wait_for_connection(sn) == 0) {
-        uint16_t len = 100;
-        send_data_onitsown(sn, len);
-    }
-    // close socket 0
-    stop_server(sn);
+// stop the watchdog timer
+void stop_watchdog() {
+    // stop the watchdog timer
+     WDTCTL = WDTPW | WDTHOLD;
 }
 
-void receive_from_server(uint8_t sn, uint16_t port) {
-    // start server with socket 0, port 200
-    start_server(sn, port);
-    // wait for connection on socket 0
-    if (wait_for_connection(sn) == 0) {
-        // wait for data reception
-        wait_for_data(sn);
-        uint16_t len = 100;
-        receive_cmd(sn, len);
-    }
-    // close socket 0
-    stop_server(sn);
+// configure and start TA0
+void start_timerA0() {
+    // configure timer A
+    TA0CCTL0 = CCIE;                      // CCR0 interrupt enabled
+    TA0CTL = TASSEL_1 + MC_1 + ID_3;      // SMCLK/8, upmode
+    TA0CCR0 =  20480/2;                     // Interrupt once every 5 second
 }
 
-#pragma vector=PORT1_VECTOR
-__interrupt void Port_1(void)
-{
-    _disable_interrupts();
-    _delay_cycles(20000);
-    P1IFG &= ~SW_1;                       // Clear SW interrupt flag
-    switch(screen_state) {
-        case HOME_1:
-            screen_state = HOME_2;
-            break;
-        case HOME_2:
-            screen_state = TEMP_HUM;
-            break;
-        case TEMP_HUM:
-            screen_state = OUTLET_1;
-            break;
-        case OUTLET_1:
-            screen_state = TOGGLE_OUTLET;
-            break;
-        case TOGGLE_OUTLET:
-            screen_state = TOGGLE_CONF_1;
-            break;
-        case TOGGLE_CONF_1:
-            screen_state = HOME_1;
-            break;
-        default:
-            break;
-    }
-
-    display_screen(screen_state);
-    _enable_interrupts();
+// stop TA0
+void stop_timerA0() {
+    TA0CCR0 =  0;                     // Interrupt once every 5 seconds
 }
 
-#pragma vector=PORT2_VECTOR
-__interrupt void Port_2(void)
-{
-    _disable_interrupts();
-    _delay_cycles(20000);
-    P2IFG &= ~SW_2;                       // Clear SW interrupt flag
-    switch(screen_state) {
-        case HOME_1:
-            screen_state = TOGGLE_CONF_1;
-            break;
-        case HOME_2:
-            screen_state = HOME_1;
-            break;
-        case TEMP_HUM:
-            screen_state = HOME_2;
-            break;
-        case OUTLET_1:
-            screen_state = TEMP_HUM;
-            break;
-        case TOGGLE_OUTLET:
-            screen_state = OUTLET_1;
-            break;
-        case TOGGLE_CONF_1:
-            screen_state = HOME_1;
-            break;
-        default:
-            break;
-    }
+// configure and start TA0
+void start_timerA1() {
+    // configure timer A
+    TA1CCTL0 = CCIE;                      // CCR0 interrupt enabled
+    TA1CTL = TASSEL_1 + MC_1 + ID_3;      // SMCLK/8, upmode
+    TA1CCR0 =  250;                     // Interrupt once every half second
+}
 
-    display_screen(screen_state);
-    _enable_interrupts();
+// stop TA0
+void stop_timerA1() {
+    TA1CCR0 =  0;                     // Interrupt once every 5 seconds
 }
 
 
@@ -208,14 +172,17 @@ __interrupt void Port_2(void)
 #pragma vector=TIMER0_A0_VECTOR
 __interrupt void Timer_A0 (void)
 {
-//    request_data_i2c();
-    send_update(0, 200);
-//    receive_from_server(0, 201);
+    _disable_interrupts();
+    update_status = 1;
+    _enable_interrupts();
 }
 
 // Timer A1 interrupt service routine
-//#pragma vector=TIMER0_A1_VECTOR
-//__interrupt void Timer_A1 (void)
-//{
-//    receive_from_server(0, 201);
-//}
+#pragma vector=TIMER1_A0_VECTOR
+__interrupt void Timer_A1 (void)
+{
+    _disable_interrupts();
+    connection_time_A1 = 1;
+    connection_time_A0 = 1;
+    _enable_interrupts();
+}

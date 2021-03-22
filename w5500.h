@@ -2,7 +2,7 @@
  * w5500.h
  *
  *  Created on: Oct 18, 2020
- *      Author: Karston Christensen
+ *      Author: WIZNET staff
  */
 
 #ifndef W5500_H_
@@ -97,7 +97,7 @@
 ////////////////////////
 uint8_t  WIZCHIP_READ (uint32_t AddrSel);
 void     WIZCHIP_WRITE(uint32_t AddrSel, uint8_t wb );
-void     WIZCHIP_READ_BUF (uint32_t AddrSel, uint8_t* pBuf, uint16_t len);
+void     WIZCHIP_READ_BUF(uint32_t AddrSel, uint8_t* pBuf, uint16_t len);
 void     WIZCHIP_WRITE_BUF(uint32_t AddrSel, uint8_t* pBuf, uint16_t len);
 
 
@@ -105,7 +105,7 @@ void     WIZCHIP_WRITE_BUF(uint32_t AddrSel, uint8_t* pBuf, uint16_t len);
 // Common Register I/O function //
 /////////////////////////////////
 #define setMR(mr) \
-    WIZCHIP_WRITE(MR,mr)
+        WIZCHIP_WRITE(MR,mr)
 
 #define getMR() \
         WIZCHIP_READ(MR)
@@ -137,7 +137,7 @@ void     WIZCHIP_WRITE_BUF(uint32_t AddrSel, uint8_t* pBuf, uint16_t len);
 #define setINTLEVEL(intlevel)  {\
         WIZCHIP_WRITE(INTLEVEL,   (uint8_t)(intlevel >> 8)); \
         WIZCHIP_WRITE(WIZCHIP_OFFSET_INC(INTLEVEL,1), (uint8_t) intlevel); \
-    }
+        }
 
 #define getINTLEVEL() \
         (((uint16_t)WIZCHIP_READ(INTLEVEL) << 8) + WIZCHIP_READ(WIZCHIP_OFFSET_INC(INTLEVEL,1)))
@@ -169,7 +169,7 @@ void     WIZCHIP_WRITE_BUF(uint32_t AddrSel, uint8_t* pBuf, uint16_t len);
 #define setRTR(rtr)   {\
         WIZCHIP_WRITE(_RTR_,   (uint8_t)(rtr >> 8)); \
         WIZCHIP_WRITE(WIZCHIP_OFFSET_INC(_RTR_,1), (uint8_t) rtr); \
-    }
+        }
 
 #define getRTR() \
         (((uint16_t)WIZCHIP_READ(_RTR_) << 8) + WIZCHIP_READ(WIZCHIP_OFFSET_INC(_RTR_,1)))
@@ -188,7 +188,7 @@ void     WIZCHIP_WRITE_BUF(uint32_t AddrSel, uint8_t* pBuf, uint16_t len);
         WIZCHIP_WRITE(Sn_MR(sn),mr)
 
 #define getSn_MR(sn) \
-    WIZCHIP_READ(Sn_MR(sn))
+        WIZCHIP_READ(Sn_MR(sn))
 
 #define setSn_CR(sn, cr) \
         WIZCHIP_WRITE(Sn_CR(sn), cr)

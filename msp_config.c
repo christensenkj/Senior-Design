@@ -31,28 +31,32 @@ int msp_config_spi_pins() {
 /*
  * Configure the USCI peripheral
  */
-//int msp_config_usci()
-//{
-//  // software reset enabled... USCI logic held in reset state
-//  UCA0CTL1 |= UCSWRST;
-//  // data captured on first clk edge, changed on next clk edge; msb sent and receive first; master mode; synchronous mode
-//  UCA0CTL0 |= UCCKPH + UCMSB + UCMST + UCSYNC;
-//  // use SMCLK as clock
-//  UCA0CTL1 |= UCSSEL_2;
-//  // divide SMCLK by 2
-//  UCA0BR0 |= 0x02;
-//  // no change to UCA0BR1 register
-//  UCA0BR1 = 0;
-//  // no change in modulation register
-//  UCA0MCTL = 0;
-//  // turn off software reset mode... release the USCI for operation
-//  UCA0CTL1 &= ~UCSWRST;
-//
-//  // Don't enable interrupts yet: just get it working with polling
-//
-//  return 0;
-//}
 
+#ifdef DEV_KIT
+int msp_config_usci()
+{
+  // software reset enabled... USCI logic held in reset state
+  UCA0CTL1 |= UCSWRST;
+  // data captured on first clk edge, changed on next clk edge; msb sent and receive first; master mode; synchronous mode
+  UCA0CTL0 |= UCCKPH + UCMSB + UCMST + UCSYNC;
+  // use SMCLK as clock
+  UCA0CTL1 |= UCSSEL_2;
+  // divide SMCLK by 2
+  UCA0BR0 |= 0x02;
+  // no change to UCA0BR1 register
+  UCA0BR1 = 0;
+  // no change in modulation register
+  UCA0MCTL = 0;
+  // turn off software reset mode... release the USCI for operation
+  UCA0CTL1 &= ~UCSWRST;
+
+  // Don't enable interrupts yet: just get it working with polling
+
+  return 0;
+}
+#endif
+
+#ifndef DEV_KIT
 int msp_config_usci()
 {
   // software reset enabled... USCI logic held in reset state
@@ -74,7 +78,7 @@ int msp_config_usci()
 
   return 0;
 }
-
+#endif
 
 /*
  * Configure the mps430's clock

@@ -17,9 +17,20 @@ extern uint8_t status;
 // get the toggle status from the i2c module
 extern uint8_t toggle_status;
 // strings from i2c updates
-extern char res_v[5];
-extern char res_i[5];
-extern char res_p[5];
+extern char res_v_1[5];
+extern char res_i_1_1[5];
+extern char res_p_1_1[5];
+extern char res_i_2_1[5];
+extern char res_p_2_1[5];
+extern char res_i_3_1[5];
+extern char res_p_3_1[5];
+extern char res_v_2[5];
+extern char res_i_1_2[5];
+extern char res_p_1_2[5];
+extern char res_i_2_2[5];
+extern char res_p_2_2[5];
+extern char res_i_3_2[5];
+extern char res_p_3_2[5];
 extern char res_t[5];
 extern char res_h[5];
 
@@ -183,25 +194,6 @@ void write_string_to_tx_buffer(char *string) {
     }
 }
 
-/*
- * Add an integer to the write buffer, tx_buffer, as hex
- */
-//void write_int_to_tx_buffer_as_hex(uint16_t i) {
-//    write_string_to_tx_buffer((const uint8_t *) "0x");
-//    write_char_to_tx_buffer(to_hex(i >> 12));
-//    write_char_to_tx_buffer(to_hex(i >> 8));
-//    write_char_to_tx_buffer(to_hex(i >> 4));
-//    write_char_to_tx_buffer(to_hex(i >> 0));
-//}
-//
-///*
-// * Add a char to the write buffer, tx_buffer, as hex
-// */
-//void write_char_to_tx_buffer_as_hex(uint8_t c) {
-//    write_string_to_tx_buffer((const uint8_t * ) "0x");
-//    write_char_to_tx_buffer(to_hex(c >> 4));
-//    write_char_to_tx_buffer(to_hex(c >> 0));
-//}
 
 /*
  * Convert an int or a char to hex
@@ -213,20 +205,23 @@ uint8_t to_hex(uint8_t c) {
 /*
  * Send and receive a byte over SPI
  */
-//uint8_t send_receive_byte_SPI(uint8_t byte) {
-//    uint8_t receive_byte = 0;
-//
-//    // send byte to the SPI transmission buffer
-//    UCA0TXBUF = byte;
-//    // wait for transmission or receive to complete
-//    while (UCA0STAT & UCBUSY);
-//    // retrieve the returned byte
-//    receive_byte = UCA0RXBUF;
-//    return receive_byte;
-//}
+
+#ifdef DEV_KIT
 uint8_t send_receive_byte_SPI(uint8_t byte) {
     uint8_t receive_byte = 0;
+    // send byte to the SPI transmission buffer
+    UCA0TXBUF = byte;
+    // wait for transmission or receive to complete
+    while (UCA0STAT & UCBUSY);
+    // retrieve the returned byte
+    receive_byte = UCA0RXBUF;
+    return receive_byte;
+}
+#endif
 
+#ifndef DEV_KIT
+uint8_t send_receive_byte_SPI(uint8_t byte) {
+    uint8_t receive_byte = 0;
     // send byte to the SPI transmission buffer
     UCB1TXBUF = byte;
     // wait for transmission or receive to complete
@@ -235,26 +230,57 @@ uint8_t send_receive_byte_SPI(uint8_t byte) {
     receive_byte = UCB1RXBUF;
     return receive_byte;
 }
+#endif
+
 
 /*
  * Process a received command from a client
  */
 void receive_cmd(uint8_t sn, uint16_t len) {
-
+    uint8_t i2_address;
+    uint8_t outlet_num;
     uint32_t recvd_len = recv(sn, len);
-    if (rx_buffer[0] == 'T') {
+
+    if (rx_buffer[0] == 'C') {
+        char str[28] = "OK\n1\n";
+        write_string_to_tx_buffer(str);
+        send(sn);
+    }
+
+    else if (rx_buffer[0] == '1' || rx_buffer[0] == '2' || rx_buffer[0] == '3' || rx_buffer[0] == '4' || rx_buffer[0] == '5' || rx_buffer[0] == '6') {
+        if (rx_buffer[0] == '1') {
+            i2_address = 0x33;
+            outlet_num = 1;
+        }
+        else if (rx_buffer[0] == '2') {
+            i2_address = 0x33;
+            outlet_num = 2;
+        }
+        else if (rx_buffer[0] == '3') {
+            i2_address = 0x33;
+            outlet_num = 3;
+        }
+        else if (rx_buffer[0] == '4') {
+            i2_address = 0x44;
+            outlet_num = 1;
+        }
+        else if (rx_buffer[0] == '5') {
+            i2_address = 0x44;
+            outlet_num = 2;
+        }
+        else if (rx_buffer[0] == '6') {
+            i2_address = 0x44;
+            outlet_num = 3;
+        }
+        // send a toggle command to desired outlet via i2c
         toggle_status = 1;
-        i2c_send_toggle();
+        i2c_send_toggle(i2_address, outlet_num);
         while(toggle_status);
         char str[128] = "OK\n\n";
         write_string_to_tx_buffer(str);
         send(sn);
     }
-    else if (rx_buffer[0] == 'C') {
-        char str[28] = "OK\n1\n";
-        write_string_to_tx_buffer(str);
-        send(sn);
-    }
+
     else {
         char str[28] = "BAD\nUnknown Command\n";
         write_string_to_tx_buffer(str);
@@ -265,65 +291,62 @@ void receive_cmd(uint8_t sn, uint16_t len) {
 /*
  * Send data on own accord to a client that is connected
  */
-uint8_t j = 0;
 void send_data_onitsown(uint8_t sn, uint16_t len) {
+    // send OK flag
     write_string_to_tx_buffer("OK\n");
+    // send temperature and humidity data
     write_string_to_tx_buffer("Temperature ");
     write_string_to_tx_buffer(res_t);
     write_string_to_tx_buffer(", ");
     write_string_to_tx_buffer("Humidity ");
     write_string_to_tx_buffer(res_h);
     write_string_to_tx_buffer(", ");
-    write_string_to_tx_buffer("Voltage ");
-    write_string_to_tx_buffer(res_v);
+    // send outlet board mcu 1 info
+    write_string_to_tx_buffer("Voltage1 ");
+    write_string_to_tx_buffer(res_v_1);
     write_string_to_tx_buffer(", ");
-    write_string_to_tx_buffer("Current ");
-    write_string_to_tx_buffer(res_i);
+    write_string_to_tx_buffer("Current1_1 ");
+    write_string_to_tx_buffer(res_i_1_1);
+    write_string_to_tx_buffer(", ");
+    write_string_to_tx_buffer("Power1_1 ");
+    write_string_to_tx_buffer(res_p_1_1);
+    write_string_to_tx_buffer(", ");
+    write_string_to_tx_buffer("Current1_2 ");
+    write_string_to_tx_buffer(res_i_2_1);
+    write_string_to_tx_buffer(", ");
+    write_string_to_tx_buffer("Power1_2 ");
+    write_string_to_tx_buffer(res_p_2_1);
+    write_string_to_tx_buffer(", ");
+    write_string_to_tx_buffer("Current1_3 ");
+    write_string_to_tx_buffer(res_i_3_1);
+    write_string_to_tx_buffer(", ");
+    write_string_to_tx_buffer("Power1_3 ");
+    write_string_to_tx_buffer(res_p_3_1);
+    write_string_to_tx_buffer(", ");
+    // send outlet board mcu 2 info
+    write_string_to_tx_buffer("Voltage2");
+    write_string_to_tx_buffer(res_v_2);
+    write_string_to_tx_buffer(", ");
+    write_string_to_tx_buffer("Current2_1 ");
+    write_string_to_tx_buffer(res_i_1_2);
+    write_string_to_tx_buffer(", ");
+    write_string_to_tx_buffer("Power2_1 ");
+    write_string_to_tx_buffer(res_p_1_2);
+    write_string_to_tx_buffer(", ");
+    write_string_to_tx_buffer("Current2_2 ");
+    write_string_to_tx_buffer(res_i_2_2);
+    write_string_to_tx_buffer(", ");
+    write_string_to_tx_buffer("Power2_2 ");
+    write_string_to_tx_buffer(res_p_2_2);
+    write_string_to_tx_buffer(", ");
+    write_string_to_tx_buffer("Current2_3 ");
+    write_string_to_tx_buffer(res_i_3_2);
+    write_string_to_tx_buffer(", ");
+    write_string_to_tx_buffer("Power2_3 ");
+    write_string_to_tx_buffer(res_p_3_2);
     write_string_to_tx_buffer("\n");
     send(sn);
-    j++;
 }
-
-//
-//// send an update via TCP to client
-//void send_update(uint8_t sn, uint16_t port) {
-//
-//    if (status == SOCK_ESTABLISHED) {
-//        stop_server(sn);
-//        return;
-//    }
-//    else {
-//        if (status != SOCK_LISTEN) {
-//            _disable_interrupts();
-//            // start server with socket 0, port 200
-//            start_server(sn, port);
-//            _enable_interrupts();
-//        }
-//        // wait for connection on socket 0
-//        wait_for_connection(sn);
-//        uint16_t len = 100;
-//        send_data_onitsown(sn, len);
-//        // close socket 0
-////        stop_server(sn);
-//    }
-//
-//}
-//
-//void receive_from_server(uint8_t sn, uint16_t port) {
-//    // start server with socket 0, port 200
-//    start_server(sn, port);
-//    // wait for connection on socket 0
-//    wait_for_connection(sn);
-////        // wait for data reception
-////        wait_for_data(sn);
-////        uint16_t len = 100;
-////        receive_cmd(sn, len);
-////    }
-//
-//    // close socket and disconnect
-//    stop_server(sn);
-//}
-
 
 /*
  * Handler for all socket transactions
@@ -362,7 +385,7 @@ void net_process_socket_receiver(uint8_t sn, uint16_t port)
 void net_process_socket_sender(uint8_t sn, uint16_t port)
 {
     unsigned char state = SOCK_CLOSED;
-    unsigned short len = 200;
+    unsigned short len = 400;
 
     state = getSn_SR(sn);
     switch (state) {

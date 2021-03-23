@@ -56,7 +56,7 @@ int main(void)
 
 
     // configure timer A0
-//    config_timerA0();
+    config_timerA0();
 
     __bis_SR_register(GIE);     // Enter LPM0 w/ interrupts
 
@@ -80,8 +80,8 @@ int main(void)
 
 void config_timerA0() {
     TA0CCTL0 = CCIE;                      // CCR0 interrupt enabled
-    TA0CTL = TASSEL_2 + MC_1 + ID_0;      // SMCLK/8, upmode
-    TA0CCR0 =  2880;                     // 7680 Hz
+    TA0CTL = TASSEL_2 + MC_1 + ID_0;      // SMCLK/1, upmode
+    TA0CCR0 =  569;                     // 7680 Hz
 }
 
 void toggle_outlet() {

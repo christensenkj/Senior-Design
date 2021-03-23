@@ -15,7 +15,7 @@ volatile uint16_t RXDataCtr;
 volatile uint16_t TXDataCtr;
 
 // buffer to store outlet data
-volatile int32_t data[BUFELEM];
+volatile int32_t data[256];
 
 //status flags
 uint8_t screen_state;
@@ -76,6 +76,7 @@ void i2c_receive_outlet(uint8_t i2_addr) {
 
 void i2c_receive_th() {
     // send i2c transmission to get the t/h info
+    update_status = 0;
 }
 
 

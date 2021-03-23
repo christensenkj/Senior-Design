@@ -97,11 +97,14 @@ int main(void) {
             TA0CCTL0 &= ~CCIE;
             TA1CCTL0 &= ~CCIE;
             // get all info from outlets via i2c
-            unsigned int i;
-            for (i = 0; i < NUM_I2_MCU; i++) {
-                i2c_receive_outlet(i2_addrs[i]);
-                get_outlet_info(&outlet_infos[i]);
-            }
+            i2c_receive_outlet(i2_addrs[0]);
+            get_outlet_info(&outlet_infos[0]);
+            while(update_status);
+            update_status = 1;
+            i2c_receive_outlet(i2_addrs[1]);
+            get_outlet_info(&outlet_infos[1]);
+            while(update_status);
+            update_status = 1;
             // get temp/hum information via i2c
             i2c_receive_th();
             get_th_info(&th_info);

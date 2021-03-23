@@ -28,7 +28,7 @@
 
 // Definitions of buffer length
 #define BUFLEN      1024
-#define BUF_ELEM    128
+#define BUFELEM    128
 
 void i2c_init(void);
 void i2c_send_toggle(uint8_t i2_addr, uint8_t outlet_num);

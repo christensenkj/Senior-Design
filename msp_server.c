@@ -385,7 +385,7 @@ void net_process_socket_receiver(uint8_t sn, uint16_t port)
 void net_process_socket_sender(uint8_t sn, uint16_t port)
 {
     unsigned char state = SOCK_CLOSED;
-    unsigned short len = 200;
+    unsigned short len = 400;
 
     state = getSn_SR(sn);
     switch (state) {

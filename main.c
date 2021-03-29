@@ -478,21 +478,27 @@ __interrupt void Port_1(void)
                     screen_state = TEMP_HUM;
                     break;
                 case HOME_2:
+                    outlet_num_abs = 1;
                     screen_state = OUTLET_1;
                     break;
                 case HOME_3:
+                    outlet_num_abs = 2;
                     screen_state = OUTLET_2;
                     break;
                 case HOME_4:
+                    outlet_num_abs = 3;
                     screen_state = OUTLET_3;
                     break;
                 case HOME_5:
+                    outlet_num_abs = 4;
                     screen_state = OUTLET_4;
                     break;
                 case HOME_6:
+                    outlet_num_abs = 5;
                     screen_state = OUTLET_5;
                     break;
                 case HOME_7:
+                    outlet_num_abs = 6;
                     screen_state = OUTLET_6;
                     break;
                 case HOME_8:
@@ -583,6 +589,7 @@ __interrupt void Port_1(void)
 
         if (!toggle_status) {
             // display the screen
+            refresh_screen_status = 1;
             display_status = 1;
         }
         // change the button state to 1

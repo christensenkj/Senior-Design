@@ -1,294 +1,218 @@
-//  MSP430F552x Demo - USCI_B0 I2C Master TX single bytes to MSP430 Slave
-//
-//  Description: This demo connects two MSP430's via the I2C bus. The master
-//  transmits to the slave. This is the master code. It continuously
-//  transmits 00h, 01h, ..., 0ffh and demonstrates how to implement an I2C
-//  master transmitter sending a single byte using the USCI_B0 TX interrupt.
-//  ACLK = n/a, MCLK = SMCLK = BRCLK = default DCO = ~1.045MHz
-//
-// ***to be used with "MSP430F55xx_uscib0_i2c_07.c" ***
-//
-//                                /|\  /|\
-//                MSP430F5529     10k  10k     MSP430F5529
-//                   slave         |    |         master
-//             -----------------   |    |   -----------------
-//           -|XIN  P3.0/UCB0SDA|<-|----+->|P3.0/UCB0SDA  XIN|-
-//            |                 |  |       |                 |
-//           -|XOUT             |  |       |             XOUT|-
-//            |     P3.1/UCB0SCL|<-+------>|P3.1/UCB0SCL     |
-//            |                 |          |                 |
-//
-//   Bhargavi Nisarga
-//   Texas Instruments Inc.
-//   April 2009
-//   Built with CCSv4 and IAR Embedded Workbench Version: 4.21
-//******************************************************************************
-//The code from TI company, use reference volt to pull-up SDA and SCL.
+/*
+ * main.c
+ *
+ * Communicates on I2C between SHTC3 Temperature and Humidity Sensor
+ * on the USCIB0 module. Starts on the interrupt of a TIMERA0 every 5 seconds
+ *
+ *  Created on: Mar 28, 2021
+ *      Author: Zach Wilson
+ */
+
 #include <msp430.h>
 #include <stdint.h>
 
-#define BUFLEN  512
+#define TIMER_TIME 15938                    // Timer A for 5 seconds plz
 
-uint8_t RXData;
-uint8_t TXData;
-volatile uint32_t data[128];
-volatile uint16_t temperature;
-volatile uint16_t humidity;
-volatile uint8_t temp_CHECKSUM;
-volatile uint8_t humid_CHECKSUM;
-volatile uint16_t RXDataCtr;
-volatile uint16_t TXDataCtr;
-volatile uint16_t shtc3_state;
-
-void init_buttons(void);
-void receive_i2c(void);
-void send_i2c(void);
 void shtc3_i2c(void);
+void Wakeup(void);
+void Measure(void);
+void Read(void);
+void Sleep(void);
+void Interpret(void);
 
-int main(void)
+volatile uint8_t TXByteCtr;
+volatile uint8_t *TXData;
+volatile uint8_t RXByteCtr;
+volatile uint8_t *RXData;
+volatile uint8_t RXBuff[6];
+//volatile uint8_t RXReady;
+volatile uint8_t SHTC3_ready;
+volatile uint8_t I2C_flag;
+volatile uint32_t RH;
+volatile uint32_t TP;
+volatile float Humid;
+volatile float Temp;
+
+void main(void)
 {
-  WDTCTL = WDTPW + WDTHOLD;                 // Stop WDT
 
-  // configure timer A0
-  TA0CCTL0 = CCIE;                      // CCR0 interrupt enabled
-  TA0CCTL1 = CCIE;                      // CCR1 interrupt enabled, added by Zach 3/4
-  TA0CCR1 = 10240;                      // Interrupt every 2.5 seconds, added by Zach 3/4
-  TA0CTL = TASSEL_1 + MC_1 + ID_3;      // SMCLK/8, upmode
-  TA0CCR0 =  20480;                     // Interrupt once every 5 seconds
+    WDTCTL = WDTPW | WDTHOLD;                // Stop watchdog timer
 
-  P4SEL |= BIT1 + BIT2;                     // Assign I2C pins to USCI_B1
-  UCB1CTL1 |= UCSWRST;                      // Enable SW reset
-  UCB1CTL0 = UCMST + UCMODE_3 + UCSYNC;     // I2C Master, synchronous mode
-  UCB1CTL1 = UCSSEL_2 + UCSWRST;            // Use SMCLK, keep SW reset
-  UCB1BR0 = 18;                             // fSCL = SMCLK/12 = ~100kHz
-  UCB1BR1 = 0;
-  UCB1CTL1 &= ~UCSWRST;                     // Clear SW reset, resume operation
-  UCB1IE |= UCRXIE | UCNACKIE;                       // Enable TX interrupt
+    // Setting the pins for I2C communication to SHTC3 via USCIB0 on MSP430F5529
 
-  RXData = 0x00;
-  TXData = 0x00;
+        // P1.0: Red LED (for debugging haha, like that's going to happen)
+        P1DIR |= BIT0;
+        P1OUT &= ~BIT0;                     // LED starts off
 
-  init_buttons();
-  __bis_SR_register(GIE);     // Enter LPM0 w/ interrupts
+        // P3.0: SDA on USCIB0
+        P3SEL |= BIT0;
 
-  while (1)
-  {
-  }
-}
+        // P3.1: SCL on USCIB0
+        P3SEL |= BIT1;
 
+    // Configuration for TimerA0
+    TA0CCTL0 |= CCIE;                       // Enable timer interrupt
+    TA0CTL = TASSEL_2 | ID_3 | MC_1;        // Set Timer A to SMCLK/8 = ; Count up to TA0CCR0
+    TA0CTL |= TACLR;                        // Good idea before starting
 
-void send_i2c() {
-    TXDataCtr = 0;
-    while (UCB1CTL1 & UCTXSTP);             // Ensure stop condition got sent
-    UCB1I2CSA = 0x48;                     // Write the slave address
-    UCB1CTL1 |= UCTR;                     // set the chip into receive mode
-    UCB1CTL0 &= ~UCSLA10;                // 7-bit addressing mode
-    UCB1CTL1 |= UCTXSTT;             // I2C TX, start condition
-//    while (UCB1CTL1 & UCTXSTT);
-}
+    // Configuration for I2C on USCIB0
+    UCB0CTL1 |= UCSWRST;
+    UCB0CTL0 |= UCMST + UCSYNC + UCMODE_3;  // I2C master mode; Synchronous; I2C Mode
+    UCB0CTL1 = UCSSEL_2 + UCSWRST;          // Set SMCLK for I2C
+    UCB0BR0 = 255;                          // fSCL = SMCLK/255 = appx 100kHz
+    UCB0BR1 = 0;
+    UCB0I2CSA = 0x70;                       // SHTC3 address
+    UCB0CTL1 &= ~UCSWRST;
 
-void receive_i2c() {
-    RXData = 0x00;
-    RXDataCtr = 0;
-    while (UCB1CTL1 & UCTXSTP);             // Ensure stop condition got sent
-    UCB1I2CSA = 0x48;                     // Write the slave address
-    UCB1CTL1 &= ~UCTR;                     // set the chip into receive mode
-    UCB1CTL0 &= ~UCSLA10;                // 7-bit addressing mode
-    UCB1CTL1 |= UCTXSTT;             // I2C TX, start condition
-//    while (UCB1CTL1 & UCTXSTT);
-}
+    SHTC3_ready = 0;                        // Don't enable temp/humid right away
+    RH = 0x00;
 
-void shtc3_i2c() {
-    shtc3_state = 0x0000;                   // Initial state of the i2c communication
-    temperature = 0x0000;
-    humidity = 0x0000;
-    temp_CHECKSUM = 0x00;
-    humid_CHECKSUM = 0x00;
-    while (UCB1CTL1 & UCTXSTP);             // Ensure stop condition got sent
-    UCB1I2CSA = 0x70;                       // Write the slave address
-    UCB1CTL1 |= UCTR;                       // Set the chip into transmit mode
-    UCB1CTL0 &= ~UCSLA10;                   // 7-bit addressing mode
-    UCB1IE |= UCTXIE;                       // Enable TX interrupts
-    UCB1CTL1 |= UCTXSTT;                    // I2C TX, start condition
-}
+    __bis_SR_register(GIE);                 // Enable global interrupts
 
+    TA0CCR0 = TIMER_TIME;                   // Start the timer initially
 
-//#pragma vector=PORT1_VECTOR
-//__interrupt void Port_1(void)
-//{
-//    P1IFG &= ~BIT1;                       // Clear SW interrupt flag
-//    receive_i2c();
-//}
-
-
-//------------------------------------------------------------------------------
-// The USCIAB0_ISR is structured such that it can be used to recieve any
-// number of bytes by pre-loading RXByteCtr with the byte count.
-//-----------------------------------------------------------------------
-#pragma vector = USCI_B1_VECTOR
-__interrupt void USCI_B1_ISR(void)
-{
-  switch(__even_in_range(UCB1IV,12))
-  {
-  case  0: break;                           // Vector  0: No interrupts
-  case  2: break;                           // Vector  2: ALIFG
-  case  4:                                  // Vector  4: NACKIFG
-      UCB1CTL1 |= UCTXSTP;                  // I2C stop condition
-      UCB1IFG &= ~UCRXIFG;                  // Clear USCI_B0 RX int flag
-      break;
-  case  6: break;                           // Vector  6: STTIFG
-  case  8: break;                           // Vector  8: STPIFG
-  case 10:                                  // Vector 10: RXIFG
-      if (shtc3_state & 0x0004)
-      {
-          shtc3_state = 0x0005;                     // State receiving the MSB of temperature
-          temperature |= UCB1RXBUF;                 // Receive the MSB of temperature
-          temperature = temperature << 8;           // Make room for LSB of temperature
-      }
-      else if (shtc3_state & 0x0005)
-      {
-          shtc3_state = 0x0006;                     // State receiving the LSB of temperature
-          temperature |= UCB1RXBUF;                 // Receive the LSB of temperature
-      }
-      else if (shtc3_state & 0x0006)
-      {
-          shtc3_state = 0x0007;                     // State receiving the CHECKSUM of temperature
-          temp_CHECKSUM = UCB1RXBUF;                // Receive the CHECKSUM for temperature
-      }
-      else if (shtc3_state & 0x0007)
-      {
-          shtc3_state = 0x0008;                     // State receiving the MSB of humidity
-          humidity |= UCB1RXBUF;                    // Receive the MSB of humidity
-          humidity |= humidity << 8;                // Make room for the LSB of humidity
-      }
-      else if (shtc3_state & 0x0008)
-      {
-          shtc3_state = 0x0009;                     // State receiving the LSB of humidity
-          humidity |= UCB1RXBUF;                    // Receive the LSB of humidity
-          UCB1CTL1 |= UCTXSTP;                      // Ensure after next byte received to send stop condition
-      }
-      else if (shtc3_state & 0x0009)
-      {
-          shtc3_state = 0x0010;                     // State receiving the CHECKSUM of humidity
-          humid_CHECKSUM = UCB1RXBUF;               // Receive the CHECKSUM of humidity
-          UCB1CTL1 |= UCTR;                         // Put Master back into transmit mode to put device to sleep
-          UCB1CTL1 |= UCTXSTT;                      // Send fifth start command after completing measurements
-      }
-      else
-      {
-          if (RXDataCtr < (BUFLEN-2))
-          {
-              RXData = UCB1RXBUF;
-              *(((uint8_t*)data) + RXDataCtr) = RXData;
-              RXDataCtr++;
-          }
-          else if (RXDataCtr == (BUFLEN-2))
-          {
-              RXData = UCB1RXBUF;
-              UCB1CTL1 |= UCTXSTP;
-              *(((uint8_t*)data) + RXDataCtr) = RXData;
-              RXDataCtr++;
-          }
-          else if (RXDataCtr == (BUFLEN-1))
-          {
-              RXData = UCB1RXBUF;
-              *(((uint8_t*)data) + RXDataCtr) = RXData;
-              RXDataCtr++;
-          }
-      }
-      break;
-  case 12:                          // Vector 12: TXIFG
-      if (shtc3_state & 0x0000)
-      {
-          shtc3_state = 0x0001;                     // State sending the MSB of wake-up command
-          UCB1TXBUF = 0x35;                         // Load buffer with MSB of wake-up command
-      }
-      else if (shtc3_state & 0x0001)
-      {
-          shtc3_state = 0x0002;                     // State sending the LSB of wake-up command
-          UCB1TXBUF = 0x17;                         // Load buffer with LSB of wake-up command
-          UCB1CTL1 |= UCTXSTP;                      // Send stop command after sending last part of wake-up protocol
-          while (UCB1CTL1 & UCTXSTP);               // Ensure stop condition sent
-          UCB1CTL1 |= UCTXSTT;                      // Send the second start condition to give a measurement command
-      }
-      else if (shtc3_state & 0x0002)
-      {
-          shtc3_state = 0x0003;                     // State sending the MSB of measurement command
-          UCB1TXBUF = 0x78;                         // Send MSB of reading temperature first
-      }
-      else if (shtc3_state & 0x0003)
-      {
-          shtc3_state = 0x0004;                     // State sending the LSB of measurement command
-          UCB1TXBUF = 0x66;                         // Send LSB of reading temperature first
-          UCB1CTL1 |= UCTXSTP;                      // Send stop command after sending last part of measurement protocol
-          while (UCB1CTL1 & UCTXSTP);               // Ensure stop condition sent
-          UCB1CTL1 &= ~UCTR;                        // Put the master back into receive mode
-          UCB1CTL1 |= UCTXSTP;                      // Send stop after 1 byte measure request
-          UCB1CTL1 |= UCTXSTT;                      // Send the third start condition to receive a measurement
-          while (UCB1CTL1 & UCTXSTP);               // Ensure stop condition sent
-          UCB1CTL1 |= UCTXSTT;                      // Send the fourth start condition to now receive measurements
-          while (UCB1CTL1 & UCTXSTT);               // Required to poll the start bit until measurements are ready
-      }
-      else if (shtc3_state & 0x0010)
-      {
-          shtc3_state = 0x0011;                     // State sending the MSB of the sleep command
-          UCB1TXBUF = 0xB0;                         // Send MSB of the sleep command
-      }
-      else if (shtc3_state & 0x0011)
-      {
-          shtc3_state = 0x0000;                     // Reset the SHTC3 back to the starting state and wait for next timer interrupt
-          UCB1TXBUF = 0x98;                         // Send the LSB of the sleep command
-          UCB1CTL1 |= UCTXSTP;                       // Send the final stop command to reset the system
-      }
-      else
-      {
-          if (TXDataCtr < 1) {
-              UCB1TXBUF = TXData;                   // Load TX buffer
-              TXData++;
-              TXDataCtr++;                          // Decrement TX byte counter
-          }
-          else {
-              UCB1CTL1 |= UCTXSTP;                  // I2C stop condition
-              UCB1IFG &= ~UCTXIFG;                  // Clear USCI_B0 TX int flag
-          }
-      }
-      break;
-  default: break;
-  }
-}
-
-// Timer A0 interrupt service routine
-#pragma vector=TIMER0_A0_VECTOR
-__interrupt void Timer_A0 (void)
-{
-    receive_i2c();
-}
-
-// Added by Zach 3/4
-#pragma vector=TIMER1_A0_VECTOR
-__interrupt void Timer_A0_X (void)
-{
-    switch(__even_in_range(TA0IV,14))
+    while(1)
     {
-    case 0: break;                          // No interrupt
-    case 2:                                 // CCR1 interrupt
-        shtc3_i2c();
+        if (SHTC3_ready == 1)
+        {
+            SHTC3_ready = 0;                // Only do this once at a time
+            shtc3_i2c();                    // Initiate communication
+        }
+    }
+
+}
+
+void shtc3_i2c(void)
+{
+    UCB0IE |= UCTXIE + UCRXIE;              // Enable TX and RX interrupts on I2C
+    Wakeup();
+    Measure();
+    UCB0IFG &= ~UCNACKIFG;                  // Clear Nack interrupt flag
+    UCB0IE |= UCNACKIE;                     // Enable Nack interrupts
+    Read();
+    UCB0IE &= ~UCNACKIE;
+    Sleep();
+    Interpret();
+    P1OUT &= ~BIT0;                         // Reset the LED to prove out of I2C
+}
+
+void Wakeup(void)
+{
+    UCB0CTL1 |= UCTR;                       // Set as transmitter
+    while (UCB0CTL1 & UCTXSTP);
+    TXByteCtr = 2;                          // Load TX Byte Counter
+    uint8_t wakeup_command[] = {0x35,0x17}; // Wakeup command for SHTC3
+    TXData = (uint8_t *)wakeup_command;     // Grab the pointer for the command
+    I2C_flag = 1;
+    UCB0CTL1 |= UCTXSTT;                    // TX start
+    while(I2C_flag);
+    while (UCB0CTL1 & UCTXSTP);             // Ensure 1st stop sent before continuing
+    __delay_cycles(100);                    // Waking up takes time. Let the baby arise
+}
+
+void Measure(void)
+{
+    UCB0CTL1 |= UCTR;                       // Set as transmitter
+    TXByteCtr = 2;                          // Load TX Byte counter
+    uint8_t measure_command[] = {0x58,0xE0};// Measure command for low power mode and no clock stretching
+    TXData = (uint8_t *)measure_command;    // Grab the pointer for the command
+    I2C_flag = 1;
+    UCB0CTL1 |= UCTXSTT;                    // TX start
+    while(I2C_flag);
+    while (UCB0CTL1 & UCTXSTP);             // Ensure 2nd stop sent before continuing
+}
+
+void Read(void)
+{
+    UCB0CTL1 &= ~UCTR;                      // Set as receiver
+    RXByteCtr = 6;                          // Load RX Byte counter
+    RXData = (uint8_t *)RXBuff;             // Set pointer to the buffer
+    //RXReady = 0;                          // Initiate the flag for polling
+    I2C_flag = 1;
+    UCB0CTL1 |= UCTXSTT;
+    while(I2C_flag);
+    while (UCB0CTL1 & UCTXSTP);
+}
+
+void Sleep(void)
+{
+    UCB0CTL1 |= UCTR;                       // Set as transmitter
+    TXByteCtr = 2;                          // Load TX Byte counter
+    uint8_t sleep_command[] = {0xB0,0x98};  // Sleep command
+    TXData = (uint8_t *)sleep_command;      // Grab pointer to the command
+    I2C_flag = 1;
+    UCB0CTL1 |= UCTXSTT;                    // TX Start
+    while(I2C_flag);
+    while (UCB0CTL1 & UCTXSTP);             // Ensure 4th stop condition sent
+}
+
+void Interpret(void)
+{
+    RH = (RXBuff[5] << 8) | RXBuff[4];
+    RH = RH & 0x0000FFFF;
+    TP = (RXBuff[2] << 8) | RXBuff[1];
+    TP = TP & 0x0000FFFF;
+    //RH = RH << 8;
+    //RH = RH | RXBuff[1];
+    //int RelHum = (int)RH;
+    Humid = (float)(100*((float)RH/65536));
+    Temp = (float)(32 + 1.8*(-45 + 175*((float)TP/65536)));
+}
+
+#pragma vector = TIMER0_A0_VECTOR
+__interrupt void timerA_ISR (void)
+{
+    P1OUT |= BIT0;                          // LED turns on to indicate start of I2C transaction
+    // Temporary measure to ensure we don't get another interrupt during I2C for now
+        TA0CCR0 = 0x00;                     // Clears timer
+    //shtc3_i2c();
+    SHTC3_ready = 1;                        // Enable turning on SHTC3
+}
+
+#pragma vector = USCI_B0_VECTOR
+__interrupt void I2C_ISR (void)
+{
+    switch(__even_in_range(UCB0IV,12))
+    {
+    case 0: break;                          // Vector 0: No interrupts
+    case 2: break;                          // Vector 2: ALIFG
+    case 4:                                 // Vector 4: NACKIFG
+        UCB0IFG &= ~UCNACKIFG;                  // Clear the interrupt flag
+        //while (UCB0CTL1 & UCTXSTP);             // Wait for a stop before trying again
+        UCB0CTL1 |= UCTXSTT;                    // Start condition
         break;
-    case 4: break;                          // CCR2 interrupt
-    case 6: break;                          // CCR3 interrupt
-    case 8: break;                          // CCR4 interrupt
-    case 10: break;                         // CCR5 iterrupt
-    case 12: break;                         // CCR6 interrupt
-    case 14: break;                         // TAIFG interrupt
+    case 6: break;                          // Vector 6: STTIFG
+    case 8: break;                          // Vector 8: STPIFG
+    case 10:                                // Vector 10: RXIFG
+        //RXReady = 1;                          // In the RX zone now
+        RXByteCtr--;                            // Decrement RX Byte Counter
+        if (RXByteCtr)
+        {
+            *(RXData + RXByteCtr) = UCB0RXBUF;  // Move RX Buffer data into local buffer
+            if (RXByteCtr == 1)                 // 1 byte left
+            {
+                UCB0CTL1 |= UCTXSTP;            // I2C stop condition
+                I2C_flag = 0;
+            }
+        }
+        else
+        {
+            *RXData = UCB0RXBUF;                // Move last byte into the local buffer
+        }
+        break;
+    case 12:                                // Vector 12: TXIFG
+        if (TXByteCtr)
+        {
+            UCB0TXBUF = *(TXData++);            // Load TX Buffer
+            TXByteCtr--;                        // Decrement TX byte counter
+        }
+        else
+        {
+            UCB0CTL1 |= UCTXSTP;                // Send stop condition
+            I2C_flag = 0;
+            UCB0IFG &= ~UCTXIFG;                // Clear TX interrupt flag
+        }
+        break;
     default: break;
     }
-}
-
-
-void init_buttons() {
-    P1DIR &= ~BIT1;                       // Set SW pin -> Input
-    P1REN |= BIT1;                        // Enable Resistor for SW pin
-    P1OUT |= BIT1;                        // Select Pull Up for SW pin
-    P1IES &= ~BIT1;                       // Select Interrupt on Rising Edge
-    P1IE |= BIT1;                         // Enable Interrupt on SW pin
 }

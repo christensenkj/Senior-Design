@@ -148,8 +148,6 @@ __interrupt void USCI_B0_ISR(void) {
           TXDataCtr = 0;
           // toggle outlet status
           outlet_status = !outlet_status;
-          // update the LCD screens with the new information
-          refresh_screen_status = 1;
           // reset i2c status
           toggle_status = 0;
       }

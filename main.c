@@ -85,6 +85,8 @@ int main(void)
             P1IE &= ~(BIT0 + BIT1 + BIT2 + BIT3 + BIT4);
             i2c_send_toggle(i2_address, outlet_num);
             while(toggle_status);
+            // update the LCD screens with the new information
+            refresh_screen_status = 1;
             P1IE |= (BIT0 + BIT1 + BIT2 + BIT3 + BIT4);
             TA0CCTL0 |= CCIE;
         }

@@ -110,11 +110,11 @@ int main(void)
 
     // Enter main while loop
     while(1) {
-        if (nack_ctr > 10) {
+        if (nack_ctr > 5) {
             // Display startup screen
             screen_state = ERROR;
             display_screen(screen_state);
-            __delay_cycles(500000);
+            __delay_cycles(700000);
         }
         if (toggle_status) {
             TA0CCTL0 &= ~CCIE;

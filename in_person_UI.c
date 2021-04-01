@@ -46,8 +46,8 @@ char screen_temp_hum_4[] = "Humidity: 32.45%";
 
 // Outlet 1 Screen
 char screen_outlet_1_1[] = "Outlet 1 Status: ON";
-char screen_outlet_1_2[] = "RMS Vol: 120.01  VAC";
-char screen_outlet_1_3[] = "RMS Cur: 10.51     A";
+char screen_outlet_1_2[] = "RMS Vol: 0.00    VAC";
+char screen_outlet_1_3[] = "RMS Cur: 0.00      A";
 char screen_outlet_1_4[] = "Aprnt Pwr: 0.00    W";
 
 // Toggle Outlet Screen

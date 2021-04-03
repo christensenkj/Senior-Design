@@ -8,7 +8,7 @@
 #ifndef MSP_SERVER_H_
 #define MSP_SERVER_H_
 
-#define DEV_KIT
+//#define DEV_KIT
 
 // function prototypes (in order of which they're presented in msp_server.c (and used, roughly))
 

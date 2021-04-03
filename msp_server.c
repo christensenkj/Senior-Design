@@ -14,8 +14,14 @@
 
 // status from Sn_SR
 extern uint8_t status;
-// get the toggle status from the i2c module
 extern uint8_t toggle_status;
+extern uint8_t refresh_screen_status;
+
+// switching variables
+extern uint8_t i2_address;
+extern uint8_t outlet_num;
+extern uint8_t outlet_num_abs;
+
 // strings from i2c updates
 extern char res_v_1[5];
 extern char res_i_1_1[5];
@@ -237,8 +243,6 @@ uint8_t send_receive_byte_SPI(uint8_t byte) {
  * Process a received command from a client
  */
 void receive_cmd(uint8_t sn, uint16_t len) {
-    uint8_t i2_address;
-    uint8_t outlet_num;
     uint32_t recvd_len = recv(sn, len);
 
     if (rx_buffer[0] == 'C') {
@@ -251,26 +255,32 @@ void receive_cmd(uint8_t sn, uint16_t len) {
         if (rx_buffer[0] == '1') {
             i2_address = 0x33;
             outlet_num = 1;
+            outlet_num_abs = 1;
         }
         else if (rx_buffer[0] == '2') {
             i2_address = 0x33;
             outlet_num = 2;
+            outlet_num_abs = 2;
         }
         else if (rx_buffer[0] == '3') {
             i2_address = 0x33;
             outlet_num = 3;
+            outlet_num_abs = 3;
         }
         else if (rx_buffer[0] == '4') {
             i2_address = 0x44;
             outlet_num = 1;
+            outlet_num_abs = 4;
         }
         else if (rx_buffer[0] == '5') {
             i2_address = 0x44;
             outlet_num = 2;
+            outlet_num_abs = 5;
         }
         else if (rx_buffer[0] == '6') {
             i2_address = 0x44;
             outlet_num = 3;
+            outlet_num_abs = 6;
         }
         // send a toggle command to desired outlet via i2c
         toggle_status = 1;
@@ -279,6 +289,8 @@ void receive_cmd(uint8_t sn, uint16_t len) {
         char str[128] = "OK\n\n";
         write_string_to_tx_buffer(str);
         send(sn);
+        // update the LCD screens with the new information
+        refresh_screen_status = 1;
     }
 
     else {

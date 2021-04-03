@@ -12,7 +12,7 @@
 #include <stdbool.h>
 #include <msp430.h>
 
-#define DEV_KIT
+//#define DEV_KIT
 
 // Define SPI pinouts
 

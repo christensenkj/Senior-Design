@@ -8,7 +8,7 @@
 #ifndef I2C_H_
 #define I2C_H_
 
-#define DEV_KIT
+//#define DEV_KIT
 
 #ifdef DEV_KIT
 #define I2C_REN         P4REN

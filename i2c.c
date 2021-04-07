@@ -11,11 +11,14 @@
 // i2c variables
 uint8_t TXData;
 uint8_t RXData;
+uint8_t *TXData_th;
+uint8_t *RXData_th;
 volatile uint16_t RXDataCtr;
 volatile uint16_t TXDataCtr;
 
-// buffer to store outlet data
+// buffer to store outlet data and temp/hum data
 volatile int32_t data[256];
+volatile uint8_t th_buff[6];
 
 //status flags
 uint8_t screen_state;
@@ -26,17 +29,10 @@ uint8_t toggle_status;
 uint8_t update_status;
 uint8_t refresh_screen_status;
 
-
-volatile uint8_t thTXDataCtr;
-volatile uint8_t *thTXData;
-volatile uint8_t thRXDataCtr;
-volatile uint8_t *thRXData;
-volatile uint8_t thBuff[6];
-//volatile uint8_t RXReady;
-volatile uint8_t SHTC3_ready;
-volatile uint8_t th_flag;
-volatile uint32_t RH;
-volatile uint32_t TP;
+// temp/hum variables
+uint8_t th_flag;
+uint32_t RH;
+uint32_t TP;
 uint32_t th_addr = 0x70;
 float Humid;
 float Temp;
@@ -55,12 +51,11 @@ void i2c_init(void) {
     UCB0CTL1 |= UCSWRST;                      // Enable SW reset
     UCB0CTL0 = UCMST + UCMODE_3 + UCSYNC;     // I2C Master, synchronous mode
     UCB0CTL1 = UCSSEL_2 + UCSWRST;            // Use SMCLK, keep SW reset
-    UCB0BR0 = 255;                            // fSCL = SMCLK/255 = ~100kHz
-    UCB0BR1 = 0;
+    UCB0BR0 = 0xFF;                            // fSCL = SMCLK/255 = ~100kHz
+    UCB0BR1 = 0x00;
     UCB0CTL1 &= ~UCSWRST;                     // Clear SW reset, resume operation
     UCB0IE |= UCRXIE | UCNACKIE |UCTXIE;      // Enable TX interrupt
     TXData = 0x00;
-    SHTC3_ready = 0;
     RH = 0x00;
 }
 
@@ -119,22 +114,22 @@ void Wakeup(void)
 {
     UCB0CTL1 |= UCTR;                       // Set as transmitter
     while (UCB0CTL1 & UCTXSTP);
-    thTXDataCtr = 2;                          // Load TX Byte Counter
+    TXDataCtr = 2;                          // Load TX Byte Counter
     uint8_t wakeup_command[] = {0x35,0x17}; // Wakeup command for SHTC3
-    thTXData = (uint8_t *)wakeup_command;     // Grab the pointer for the command
+    TXData_th = (uint8_t *)wakeup_command;     // Grab the pointer for the command
     th_flag = 1;
     UCB0CTL1 |= UCTXSTT;                    // TX start
     while(th_flag);
     while (UCB0CTL1 & UCTXSTP);             // Ensure 1st stop sent before continuing
-    __delay_cycles(100);                    // Waking up takes time.
+    __delay_cycles(100*16);                    // Waking up takes time.
 }
 
 void Measure(void)
 {
     UCB0CTL1 |= UCTR;                       // Set as transmitter
-    thTXDataCtr = 2;                          // Load TX Byte counter
+    TXDataCtr = 2;                          // Load TX Byte counter
     uint8_t measure_command[] = {0x58,0xE0};// Measure command for low power mode and no clock stretching
-    thTXData = (uint8_t *)measure_command;    // Grab the pointer for the command
+    TXData_th = (uint8_t *)measure_command;    // Grab the pointer for the command
     th_flag = 1;
     UCB0CTL1 |= UCTXSTT;                    // TX start
     while(th_flag);
@@ -144,9 +139,8 @@ void Measure(void)
 void Read(void)
 {
     UCB0CTL1 &= ~UCTR;                      // Set as receiver
-    thRXDataCtr = 6;                          // Load RX Byte counter
-    thRXData = (uint8_t *)thBuff;             // Set pointer to the buffer
-    //RXReady = 0;                          // Initiate the flag for polling
+    RXDataCtr = 6;                          // Load RX Byte counter
+    RXData_th = (uint8_t *)th_buff;             // Set pointer to the buffer
     th_flag = 1;
     UCB0CTL1 |= UCTXSTT;
     while(th_flag);
@@ -156,9 +150,9 @@ void Read(void)
 void Sleep(void)
 {
     UCB0CTL1 |= UCTR;                       // Set as transmitter
-    thTXDataCtr = 2;                          // Load TX Byte counter
+    TXDataCtr = 2;                          // Load TX Byte counter
     uint8_t sleep_command[] = {0xB0,0x98};  // Sleep command
-    thTXData = (uint8_t *)sleep_command;      // Grab pointer to the command
+    TXData_th = (uint8_t *)sleep_command;      // Grab pointer to the command
     th_flag = 1;
     UCB0CTL1 |= UCTXSTT;                    // TX Start
     while(th_flag);
@@ -167,15 +161,13 @@ void Sleep(void)
 
 void Interpret(void)
 {
-    RH = (thBuff[5] << 8) | thBuff[4];
+    RH = (th_buff[5] << 8) | th_buff[4];
     RH = RH & 0x0000FFFF;
-    TP = (thBuff[2] << 8) | thBuff[1];
+    TP = (th_buff[2] << 8) | th_buff[1];
     TP = TP & 0x0000FFFF;
-    //RH = RH << 8;
-    //RH = RH | RXBuff[1];
-    //int RelHum = (int)RH;
     Humid = (float)(100*((float)RH/65536));
     Temp = (float)(32 + 1.8*(-45 + 175*((float)TP/65536)));
+    update_status = 0;
 }
 
 
@@ -196,7 +188,6 @@ __interrupt void USCI_B0_ISR(void) {
       // reset i2c status
       toggle_status = 0;
       update_status = 0;
-      th_flag = 0;
       break;
   // Start interrupts STTIFG
   case  6: break;
@@ -237,11 +228,11 @@ __interrupt void USCI_B0_ISR(void) {
 
       else if (i2c_mode == SHTC3_MODE) {
 
-          thRXDataCtr--;                            // Decrement RX Byte Counter
-          if (thRXDataCtr)
+          RXDataCtr--;                            // Decrement RX Byte Counter
+          if (RXDataCtr)
           {
-              *(thRXData + thRXDataCtr) = UCB0RXBUF;  // Move RX Buffer data into local buffer
-              if (thRXDataCtr == 1)                 // 1 byte left
+              *(RXData_th + RXDataCtr) = UCB0RXBUF;  // Move RX Buffer data into local buffer
+              if (RXDataCtr == 1)                 // 1 byte left
               {
                   UCB0CTL1 |= UCTXSTP;            // I2C stop condition
                   th_flag = 0;
@@ -249,7 +240,7 @@ __interrupt void USCI_B0_ISR(void) {
           }
           else
           {
-              *thRXData = UCB0RXBUF;                // Move last byte into the local buffer
+              *RXData_th = UCB0RXBUF;                // Move last byte into the local buffer
           }
 
       }
@@ -283,10 +274,10 @@ __interrupt void USCI_B0_ISR(void) {
 
       else if (i2c_mode == SHTC3_MODE) {
 
-          if (thTXDataCtr)
+          if (TXDataCtr)
           {
-              UCB0TXBUF = *(thTXData++);            // Load TX Buffer
-              thTXDataCtr--;                        // Decrement TX byte counter
+              UCB0TXBUF = *(TXData_th++);            // Load TX Buffer
+              TXDataCtr--;                        // Decrement TX byte counter
           }
           else
           {

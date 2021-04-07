@@ -24,9 +24,6 @@ extern uint8_t toggle_status;
 extern uint8_t update_status;
 extern uint8_t refresh_screen_status;
 
-// th i2c variables
-extern uint8_t SHTC3_ready;
-
 // i2c addresses of outlet board mcus
 #define NUM_I2_MCU  2
 // store the addresses of the outlet board mcus
@@ -83,8 +80,6 @@ int main(void) {
     // configure and start the timerA0
     start_timerA0();
     start_timerA1();
-    P4DIR |= BIT7;
-    P4OUT |= BIT7;
 
     // flag to indicate timer interrupt
     connection_time_A0 = 0;
@@ -106,6 +101,11 @@ int main(void) {
             update_status = 1;
             i2c_receive_outlet(i2_addrs[1]);
             get_outlet_info(&outlet_infos[1]);
+            while(update_status);
+            update_status = 1;
+            // get all info from temperature and humidity sensor
+            shtc3_i2c();
+            get_th_info(&th_info);
             while(update_status);
             TA0CCTL0 |= CCIE;
             TA1CCTL0 |= CCIE;
@@ -129,17 +129,6 @@ int main(void) {
             TA0CCTL0 |= CCIE;
             TA1CCTL0 |= CCIE;
             connection_time_A1 = 0;
-        }
-        // get temperature and humidity
-        if (SHTC3_ready == 1)
-        {
-            TA0CCTL0 &= ~CCIE;
-            TA1CCTL0 &= ~CCIE;
-            shtc3_i2c();                    // Initiate communication
-            get_th_info(&th_info);
-            TA0CCTL0 |= CCIE;
-            TA1CCTL0 |= CCIE;
-            SHTC3_ready = 0;                // Only do this once at a time
         }
     }
 }
@@ -183,7 +172,6 @@ __interrupt void Timer_A0 (void)
 {
     _disable_interrupts();
     update_status = 1;
-    SHTC3_ready = 1;
     _enable_interrupts();
 }
 

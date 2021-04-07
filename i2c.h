@@ -8,7 +8,7 @@
 #ifndef I2C_H_
 #define I2C_H_
 
-#define DEV_KIT
+//#define DEV_KIT
 
 #ifdef DEV_KIT
 #define I2C_REN         P4REN
@@ -28,7 +28,7 @@
 
 // Definitions of buffer length
 #define BUFLEN      1024
-#define BUFELEM    128
+#define BUFELEM     128
 
 void i2c_init(void);
 void i2c_send_toggle(uint8_t i2_addr, uint8_t outlet_num);

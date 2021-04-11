@@ -10,6 +10,7 @@
 #include "i2c.h"
 #include "math_engine.h"
 #include "strings.h"
+#include "DHT11_LIB.h"
 
 // i2c variables
 extern uint8_t screen_state;
@@ -34,12 +35,15 @@ struct outlet_struct outlet_infos[NUM_I2_MCU];
 // store a struct to hold temperature and humidity data
 struct th_struct th_info;
 
+unsigned char volatile TOUT;
+
 // Local function declarations
 void send_update(uint8_t sn, uint16_t port);
 void start_timerA0(void);
 void stop_timerA0(void);
 void start_timerA1(void);
 void stop_timerA1(void);
+void start_timerA2(void);
 void stop_watchdog(void);
 void init_buttons(void);
 
@@ -56,16 +60,16 @@ int main(void)
     lcdInit();
 
     // Display startup screen
-//    screen_state = INIT;
-//    lcdClear();
-//    display_screen(screen_state);
-//    __delay_cycles(5000000);
+    screen_state = INIT;
+    lcdClear();
+    display_screen(screen_state);
+    __delay_cycles(5000000);
     lcdClear();
     screen_state = HOME_1;
     display_screen(screen_state);
 
     // initialize the outlet status
-    outlet_status = 1;
+    outlet_status = 0;
     button_state = 0;
     toggle_status = 0;
     display_status = 0;
@@ -74,6 +78,8 @@ int main(void)
 
     // configure and start the timerA0
     start_timerA0();
+    start_timerA2();
+    init_dht11();
 
     // enable interrupts globally
     _enable_interrupts();
@@ -103,7 +109,7 @@ int main(void)
             get_outlet_info(&outlet_infos[1]);
             update_status = 1;
             // get temp/hum information via i2c
-            i2c_receive_th();
+            receive_th();
             // wait for the update to finish
             while(update_status);
             get_th_info(&th_info);
@@ -148,6 +154,12 @@ void start_timerA0() {
     TA0CCR0 =  20480;                     // Interrupt once every 5 second
 }
 
+// configure and start TA0
+void start_timerA2() {
+    TA2CCTL0 = CCIE;                      // CCR0 interrupt enabled
+    TA2CTL = TASSEL_2 + MC_1 + ID_2 + TACLR;      // SMCLK/4, upmode
+}
+
 // stop TA0
 void stop_timerA0() {
     TA0CCR0 =  0;                     // Interrupt once every 5 seconds
@@ -177,6 +189,12 @@ __interrupt void Timer_A0 (void)
     update_status = 1;
     // re-enable button interrupts
     P1IE |= (BIT0 + BIT1 + BIT2 + BIT3 + BIT4);
+}
+
+#pragma vector = TIMER2_A0_VECTOR
+__interrupt void Timer_A2(void){
+    TOUT=1;
+    CLR (TA2CCTL0, CCIFG);
 }
 
 // Button Interrupt
@@ -526,7 +544,7 @@ __interrupt void Port_1(void)
                     break;
                 case TOGGLE_CONF_1_y:
                     i2_address = i2_addrs[0];
-                    outlet_num = 0;
+                    outlet_num = 2;
                     outlet_num_abs = 1;
                     toggle_status = 1;
                     screen_state = TOGGLE_CONF_1_y;
@@ -546,7 +564,7 @@ __interrupt void Port_1(void)
                     break;
                 case TOGGLE_CONF_3_y:
                     i2_address = i2_addrs[0];
-                    outlet_num = 2;
+                    outlet_num = 0;
                     outlet_num_abs = 3;
                     toggle_status = 1;
                     screen_state = TOGGLE_CONF_3_y;
@@ -556,7 +574,7 @@ __interrupt void Port_1(void)
                     break;
                 case TOGGLE_CONF_4_y:
                     i2_address = i2_addrs[1];
-                    outlet_num = 0;
+                    outlet_num = 2;
                     outlet_num_abs = 4;
                     toggle_status = 1;
                     screen_state = TOGGLE_CONF_4_y;
@@ -576,7 +594,7 @@ __interrupt void Port_1(void)
                     break;
                 case TOGGLE_CONF_6_y:
                     i2_address = i2_addrs[1];
-                    outlet_num = 2;
+                    outlet_num = 0;
                     outlet_num_abs = 6;
                     toggle_status = 1;
                     screen_state = TOGGLE_CONF_6_y;

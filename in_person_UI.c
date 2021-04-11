@@ -33,10 +33,10 @@ extern char res_t[5];
 extern char res_h[5];
 
 // INIT Screen
-char screen_init_1[] = "ROSES ARE RED";
-char screen_init_2[] = "VIOLETS ARE BLUE";
-char screen_init_3[] = "KARSTON IS THE BEST";
-char screen_init_4[] = "PROGRAMMER AT CU";
+char screen_init_1[] = "WELCOME TO ";
+char screen_init_2[] = "RXL PDU";
+char screen_init_3[] = "UNIVERSITY OF";
+char screen_init_4[] = "COLORADO BOULDER";
 
 // Home Screen 1
 char screen_home_top[] = "PDU HOME";

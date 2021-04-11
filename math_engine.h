@@ -8,6 +8,8 @@
 #ifndef MATH_ENGINE_H_
 #define MATH_ENGINE_H_
 
+#include <stdint.h>
+
 #define BUFLEN      1024
 #define BUFELEM     128
 
@@ -23,8 +25,8 @@ struct outlet_struct {
 };
 
 struct th_struct {
-   float temp;
-   float hum;
+   uint8_t temp;
+   uint8_t hum;
 };
 
 

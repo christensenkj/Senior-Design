@@ -51,8 +51,8 @@ void format_strings(struct outlet_struct *outlet_infos, struct th_struct *th_inf
     sprintf(res_i_3_2, "%.2f", outlet_infos[1].i_rms_3);
     sprintf(res_p_3_2, "%.2f", outlet_infos[1].p_apparent_3);
     // update strings for temperature and humidity
-    sprintf(res_t, "%.2f", th_info->temp);
-    sprintf(res_h, "%.2f", th_info->hum);
+    sprintf(res_t, "%d", th_info->temp);
+    sprintf(res_h, "%d", th_info->hum);
 }
 
 

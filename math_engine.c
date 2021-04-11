@@ -1,8 +1,12 @@
 #include <math.h>
-#include <stdint.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include "math_engine.h"
 
 extern int32_t data[BUFELEM];
+extern uint8_t temp;
+extern uint8_t hum;
 
 void get_outlet_info(struct outlet_struct *outlet_info) {
     float v_rms = 0.0;
@@ -28,17 +32,17 @@ void get_outlet_info(struct outlet_struct *outlet_info) {
         i_rms_3 += normalized_i_3*normalized_i_3;
         p_apparent_3 += normalized_v*normalized_i_3;
     }
-    outlet_info->v_rms = sqrt(v_rms / BUFELEM);
-    outlet_info->i_rms_1 = sqrt(17.85 * i_rms_1 / BUFELEM);
-    outlet_info->p_apparent_1 = p_apparent_1 / BUFELEM;
-    outlet_info->i_rms_2 = sqrt(17.85 * i_rms_2 / BUFELEM);
-    outlet_info->p_apparent_2 = p_apparent_2 / BUFELEM;
-    outlet_info->i_rms_3 = sqrt(17.85 * i_rms_3 / BUFELEM);
-    outlet_info->p_apparent_3 = p_apparent_3 / BUFELEM;
+    outlet_info->v_rms = sqrt(v_rms / (BUFELEM/4));
+    outlet_info->i_rms_1 = sqrt(17.85 * i_rms_1 / (BUFELEM/4));
+    outlet_info->p_apparent_1 = p_apparent_1 / (BUFELEM/4);
+    outlet_info->i_rms_2 = sqrt(17.85 * i_rms_2 / (BUFELEM/4));
+    outlet_info->p_apparent_2 = p_apparent_2 / (BUFELEM/4);
+    outlet_info->i_rms_3 = sqrt(17.85 * i_rms_3 / (BUFELEM/4));
+    outlet_info->p_apparent_3 = p_apparent_3 / (BUFELEM/4);
 }
 
 
 void get_th_info(struct th_struct *th_info) {
-    th_info->temp = 0.0;
-    th_info->hum = 0.0;
+    th_info->temp = temp;
+    th_info->hum = hum;
 }

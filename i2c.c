@@ -75,11 +75,6 @@ void i2c_receive_outlet(uint8_t i2_addr) {
     UCB0CTL1 |= UCTXSTT;
 }
 
-void i2c_receive_th() {
-    // send i2c transmission to get the t/h info
-    update_status = 0;
-}
-
 
 // I2C routine
 #pragma vector = USCI_B0_VECTOR

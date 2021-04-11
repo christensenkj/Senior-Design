@@ -32,7 +32,7 @@ void lcdInit() {
     delay_ms(5);
 
     // Send commands to initialize LCD
-    lcdWriteCmd(0x38); // 8-bit, 2 line, 5x8
+    lcdWriteCmd(0x28); // 4-bit, 2 line, 5x8
     delay_ms(5);
     lcdWriteCmd(0x08); // Instruction Flow
     delay_ms(5);
@@ -111,9 +111,9 @@ void lcdWrite4Bits(unsigned char val)
 
 void lcdSendByte(unsigned char byte)
 {
-    lcdWrite8Bits(byte);
-//    lcdWrite4Bits(byte >> 4);
-//    lcdWrite4Bits(byte);
+//    lcdWrite8Bits(byte);
+    lcdWrite4Bits(byte >> 4);
+    lcdWrite4Bits(byte);
     delay_ms(5);
 }
 

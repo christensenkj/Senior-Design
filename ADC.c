@@ -17,13 +17,16 @@ extern uint8_t buf1;
 extern uint8_t buf2;
 extern uint8_t buf3;
 
+uint32_t cal_offset_i = 0x80;
+uint32_t cal_offset_v = 0x48;
+
 static void internal_config_adc(ADC_CONFIG_STRUCT *config);
 static void write_ADC_buffer0(void);
 static void write_ADC_buffer1(void);
 static void write_ADC_buffer2(void);
 static void write_ADC_buffer3(void);
 
-uint32_t circularBuffer[BUFELEM];
+int32_t circularBuffer[BUFELEM];
 
 
 void adc_config(bool overFlow, uint8_t adcChannel) {
@@ -58,7 +61,6 @@ void internal_config_adc(ADC_CONFIG_STRUCT *config) {
         buf_ptr_2 = 96;
     } else if (Channel == ADC_CHANNEL3) {
         SD24CCTL3 |= SD24SNGL + SD24OSR_32 + SD24DF + SD24IE;   // Single conversion, Over-sampling ratio 64, 2s compliment format, enable data interrupt for SD24 (auto clear)
-        SD24INCTL3 |= SD24GAIN_1 + SD24INCH_0;                               // Gain of 1
         buf_ptr_3 = 0;
     } else {
         while(1);
@@ -107,7 +109,7 @@ __interrupt void SD24_ISR(void) {
 }
 
 void write_ADC_buffer0() {
-    uint32_t tempRead_lower = SD24MEM0;
+    int32_t tempRead_lower = SD24MEM0 - cal_offset_i;
     circularBuffer[buf_ptr_0] = tempRead_lower;
     buf_ptr_0++;
     if (buf_ptr_0 == 64) {
@@ -117,7 +119,7 @@ void write_ADC_buffer0() {
 }
 
 void write_ADC_buffer1() {
-    uint32_t tempRead_lower = SD24MEM1;
+    int32_t tempRead_lower = SD24MEM1 - cal_offset_i;
     circularBuffer[buf_ptr_1] = tempRead_lower;
     buf_ptr_1++;
     if (buf_ptr_1 == 96) {
@@ -127,7 +129,7 @@ void write_ADC_buffer1() {
 }
 
 void write_ADC_buffer2() {
-    uint32_t tempRead_lower = SD24MEM2;
+    int32_t tempRead_lower = SD24MEM2 - cal_offset_i;
     circularBuffer[buf_ptr_2] = tempRead_lower;
     buf_ptr_2++;
     if (buf_ptr_2 == 128) {
@@ -137,7 +139,7 @@ void write_ADC_buffer2() {
 }
 
 void write_ADC_buffer3() {
-    uint32_t tempRead_lower = SD24MEM3;
+    int32_t tempRead_lower = SD24MEM3 - cal_offset_v;
     circularBuffer[buf_ptr_3] = tempRead_lower;
     buf_ptr_3++;
     if (buf_ptr_3 == 32) {

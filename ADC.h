@@ -13,7 +13,7 @@
 #include <stdint.h>
 
 #define BUFLEN      1024
-#define BUFELEM    128
+#define BUFELEM     128
 
 enum adc_channels {
     ADC_CHANNEL0,

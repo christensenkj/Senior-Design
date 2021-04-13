@@ -15,16 +15,19 @@ volatile uint16_t RXDataCtr;
 volatile uint16_t TXDataCtr;
 
 // buffer to store outlet data
-volatile int32_t data[256];
+volatile int16_t data[256];
 
 //status flags
 uint8_t screen_state;
-uint8_t outlet_status;
 uint8_t button_state;
 uint8_t display_status;
 uint8_t toggle_status;
 uint8_t update_status;
 uint8_t refresh_screen_status;
+
+extern uint8_t outlet_num_abs;
+
+uint8_t outlet_statuses[6] = {0,0,0,0,0,0};
 
 void i2c_init(void) {
     I2C_REN |= (I2C_SDA_PIN + I2C_SCL_PIN);
@@ -34,7 +37,7 @@ void i2c_init(void) {
     UCB0CTL0 = UCMST + UCMODE_3 + UCSYNC;     // I2C Master, synchronous mode
     UCB0CTL1 = UCSSEL_2 + UCSWRST;            // Use SMCLK, keep SW reset
 //    UCB0BR0 = 255;                            // fSCL = SMCLK/255 = ~100kHz
-    UCB0BR0 = 14;                            // fSCL = SMCLK/255 = ~100kHz
+    UCB0BR0 = 16;                            // fSCL = SMCLK/255 = ~100kHz
     UCB0BR1 = 0;
     UCB0CTL1 &= ~UCSWRST;                     // Clear SW reset, resume operation
     UCB0IE |= UCRXIE | UCNACKIE |UCTXIE;      // Enable TX interrupt
@@ -134,6 +137,8 @@ __interrupt void USCI_B0_ISR(void) {
           UCB0TXBUF = TXData;
           // increment the bytes sent counter
           TXDataCtr++;
+          // toggle outlet status
+          outlet_statuses[outlet_num_abs-1] = !outlet_statuses[outlet_num_abs-1];
       }
       // If the byte was sent, send a stop condition
       else {
@@ -141,8 +146,6 @@ __interrupt void USCI_B0_ISR(void) {
           UCB0CTL1 |= UCTXSTP;
           UCB0IFG &= ~UCTXIFG;
           TXDataCtr = 0;
-          // toggle outlet status
-          outlet_status = !outlet_status;
           // reset i2c status
           toggle_status = 0;
       }

@@ -2,50 +2,83 @@
 #include "string.h"
 
 void lcdInit() {
-    delay_ms(100);
+//    delay_ms(100);
     // Wait for 100ms after power is applied.
-
     // Initialize pins
     RS_DIR |= RS_PIN;
     EN_DIR |= EN_PIN;
     RW_DIR |= RW_PIN;
+    RS_PORT &= ~RS_PIN;
+    EN_PORT &= ~EN_PIN;
     RW_PORT &= ~RW_PIN;
+
     DATA_0_DIR |= DATA_0_PIN;
     DATA_1_DIR |= DATA_1_PIN;
     DATA_2_DIR |= DATA_2_PIN;
     DATA_3_DIR |= DATA_3_PIN;
+    DATA_0_PORT &= ~DATA_0_PIN;
+    DATA_1_PORT &= ~DATA_1_PIN;
+    DATA_2_PORT &= ~DATA_2_PIN;
+    DATA_3_PORT &= ~DATA_3_PIN;
+
     DATA_4_DIR |= DATA_4_PIN;
     DATA_5_DIR |= DATA_5_PIN;
     DATA_6_DIR |= DATA_6_PIN;
     DATA_7_DIR |= DATA_7_PIN;
+    DATA_4_PORT &= ~DATA_4_PIN;
+    DATA_5_PORT &= ~DATA_5_PIN;
+    DATA_6_PORT &= ~DATA_6_PIN;
+    DATA_7_PORT &= ~DATA_7_PIN;
 
+    delay_ms(100);
+
+
+//    lcdTriggerEN();
+//    delay_ms(100);
+//    lcdTriggerEN();
     // Reset the LCD
     P7OUT = 0x03;
+    delay_ms(30);
     lcdTriggerEN();
-    delay_ms(5);
+    delay_ms(10);
     lcdTriggerEN();
-    delay_ms(5);
+    delay_ms(10);
     lcdTriggerEN();
-    delay_ms(5);
+    delay_ms(10);
     P7OUT = 0x02;
     lcdTriggerEN();
-    delay_ms(5);
+//    delay_ms(5);
+
+//    delay_ms(100);
+//    // Reset the LCD
+//    P7OUT = 0x03;
+//    lcdTriggerEN();
+//    delay_ms(5);
+//    lcdTriggerEN();
+//    delay_ms(5);
+//    lcdTriggerEN();
+//    delay_ms(5);
+//    P7OUT = 0x02;
+//    lcdTriggerEN();
+//    delay_ms(5);
+//
 
     // Send commands to initialize LCD
     lcdWriteCmd(0x28); // 4-bit, 2 line, 5x8
-    delay_ms(5);
+//    delay_ms(10);
     lcdWriteCmd(0x08); // Instruction Flow
-    delay_ms(5);
+//    delay_ms(10);
     lcdWriteCmd(0x0C); // Display On, No blink
-    delay_ms(5);
-    lcdWriteCmd(0x01); // Clear LCD
-    delay_ms(5);
+//    delay_ms(10);
+//    lcdWriteCmd(0x01); // Clear LCD
+//    delay_ms(10);
     lcdWriteCmd(0x06); // Auto-Increment
-    delay_ms(5);
+//    delay_ms(10);
 }
 
 void lcdTriggerEN() {
     ENABLE_HIGH;
+    delay_ms(1);
     ENABLE_LOW;
 }
 
@@ -114,7 +147,7 @@ void lcdSendByte(unsigned char byte)
 //    lcdWrite8Bits(byte);
     lcdWrite4Bits(byte >> 4);
     lcdWrite4Bits(byte);
-    delay_ms(5);
+//    delay_ms(5);
 }
 
 void lcdWriteData(unsigned char data) {

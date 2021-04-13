@@ -14,17 +14,18 @@
 
 // i2c variables
 extern uint8_t screen_state;
-extern uint8_t outlet_status;
 extern uint8_t button_state;
 extern uint8_t display_status;
 extern uint8_t toggle_status;
 extern uint8_t update_status;
 extern uint8_t refresh_screen_status;
+uint8_t toggle_ready = 0;
 
 // switching variables
 uint8_t i2_address;
 uint8_t outlet_num;
 uint8_t outlet_num_abs;
+extern uint8_t outlet_statuses[6];
 
 // i2c addresses of outlet board mcus
 #define NUM_I2_MCU  2
@@ -44,14 +45,16 @@ void stop_timerA0(void);
 void start_timerA1(void);
 void stop_timerA1(void);
 void start_timerA2(void);
-void stop_watchdog(void);
+void init_watchdog(void);
 void init_buttons(void);
 
 
 int main(void)
 {
-    // stop the watchdog timer
-    stop_watchdog();
+    // stop watchdog
+    WDTCTL = WDTPW | WDTHOLD;
+    // delay at start
+    //__delay_cycles(500000);
     // configure the i2c peripheral
     i2c_init();
     // initialize buttons
@@ -61,31 +64,36 @@ int main(void)
 
     // Display startup screen
     screen_state = INIT;
-    lcdClear();
     display_screen(screen_state);
     __delay_cycles(5000000);
-    lcdClear();
     screen_state = HOME_1;
     display_screen(screen_state);
 
     // initialize the outlet status
-    outlet_status = 0;
     button_state = 0;
     toggle_status = 0;
     display_status = 0;
     update_status = 0;
     refresh_screen_status = 0;
+    outlet_num_abs = 1;
 
     // configure and start the timerA0
     start_timerA0();
     start_timerA2();
     init_dht11();
 
+//    // start the watchdog timer
+//    init_watchdog();
+
     // enable interrupts globally
     _enable_interrupts();
 
     // Enter main while loop
     while(1) {
+//        // kick the dog
+//        WDTCTL = WDTPW | WDTCNTCL;
+
+        // handle tasks
         if (toggle_status) {
             TA0CCTL0 &= ~CCIE;
             P1IE &= ~(BIT0 + BIT1 + BIT2 + BIT3 + BIT4);
@@ -93,9 +101,11 @@ int main(void)
             while(toggle_status);
             // update the LCD screens with the new information
             refresh_screen_status = 1;
+            toggle_ready = 1;
             P1IE |= (BIT0 + BIT1 + BIT2 + BIT3 + BIT4);
             TA0CCTL0 |= CCIE;
         }
+
         // handle updates
         if (update_status) {
             TA0CCTL0 &= ~CCIE;
@@ -119,19 +129,31 @@ int main(void)
             // update the LCD screens with the new information
             refresh_screen_status = 1;
         }
+
         if (refresh_screen_status) {
-            // update the LCD screens with the new information
-            update_screen(screen_state, outlet_num_abs, outlet_status);
-            // display the new screens
-            if ((screen_state == TEMP_HUM) || (screen_state == OUTLET_1) || (screen_state == OUTLET_2) || (screen_state == OUTLET_3) || (screen_state == OUTLET_4)
-                    || (screen_state == OUTLET_5) || (screen_state == OUTLET_6)
-                    || (screen_state == TOGGLE_CONF_1_y) || (screen_state == TOGGLE_CONF_1_n) || (screen_state == TOGGLE_CONF_2_y) || (screen_state == TOGGLE_CONF_2_n)
+            if ((screen_state == TOGGLE_CONF_1_y) || (screen_state == TOGGLE_CONF_1_n) || (screen_state == TOGGLE_CONF_2_y) || (screen_state == TOGGLE_CONF_2_n)
                     || (screen_state == TOGGLE_CONF_3_y) || (screen_state == TOGGLE_CONF_3_n) || (screen_state == TOGGLE_CONF_4_y) || (screen_state == TOGGLE_CONF_4_n)
                     || (screen_state == TOGGLE_CONF_5_y) || (screen_state == TOGGLE_CONF_5_n) || (screen_state == TOGGLE_CONF_6_y) || (screen_state == TOGGLE_CONF_6_n)) {
-                display_status = 1;
+                if (toggle_ready) {
+                    // update the LCD screens with the new information
+                    update_screen(screen_state, outlet_num_abs);
+                    display_status = 1;
+                    refresh_screen_status = 0;
+                    toggle_ready = 0;
+                }
             }
-            refresh_screen_status = 0;
+            else {
+                // update the LCD screens with the new information
+                update_screen(screen_state, outlet_num_abs);
+                // display the new screens
+                if ((screen_state == TEMP_HUM) || (screen_state == OUTLET_1) || (screen_state == OUTLET_2) || (screen_state == OUTLET_3) || (screen_state == OUTLET_4)
+                        || (screen_state == OUTLET_5) || (screen_state == OUTLET_6)) {
+                    display_status = 1;
+                }
+                refresh_screen_status = 0;
+            }
         }
+
         if (display_status) {
             display_screen(screen_state);
             display_status = 0;
@@ -141,9 +163,12 @@ int main(void)
 
 
 // stop the watchdog timer
-void stop_watchdog() {
+void init_watchdog() {
     // stop the watchdog timer
-     WDTCTL = WDTPW | WDTHOLD;
+     WDTCTL = WDTPW | ~WDTHOLD;
+     WDTCTL = WDTPW | WDTSSEL_1;
+     WDTCTL = WDTPW | WDTIS_4;
+
 }
 
 // configure and start TA0
@@ -204,7 +229,8 @@ __interrupt void Port_1(void)
     // disable necessary interrupts
     P1IE &= ~(BIT0 + BIT1 + BIT2 + BIT3 + BIT4);
     TA0CCTL0 &= ~CCIE;
-    __delay_cycles(5000);
+    __delay_cycles(8000);
+    uint8_t update_state = 0;
 
     // if we have a falling edge (button is pressed), we execute everything
     if (button_state == 0) {
@@ -496,51 +522,58 @@ __interrupt void Port_1(void)
             switch(screen_state) {
                 case HOME_1:
                     screen_state = TEMP_HUM;
+                    update_state = 1;
                     break;
                 case HOME_2:
                     outlet_num_abs = 1;
+                    update_state = 1;
                     screen_state = OUTLET_1;
                     break;
                 case HOME_3:
                     outlet_num_abs = 2;
+                    update_state = 1;
                     screen_state = OUTLET_2;
                     break;
                 case HOME_4:
                     outlet_num_abs = 3;
+                    update_state = 1;
                     screen_state = OUTLET_3;
                     break;
                 case HOME_5:
                     outlet_num_abs = 4;
+                    update_state = 1;
                     screen_state = OUTLET_4;
                     break;
                 case HOME_6:
                     outlet_num_abs = 5;
+                    update_state = 1;
                     screen_state = OUTLET_5;
                     break;
                 case HOME_7:
                     outlet_num_abs = 6;
+                    update_state = 1;
                     screen_state = OUTLET_6;
                     break;
                 case HOME_8:
                     screen_state = TOGGLE_OUTLET_1;
                     break;
                 case TOGGLE_OUTLET_1:
-                    screen_state = TOGGLE_CONF_1_y;
+                    screen_state = TOGGLE_CONF_1_n;
                     break;
                 case TOGGLE_OUTLET_2:
-                    screen_state = TOGGLE_CONF_2_y;
+                    screen_state = TOGGLE_CONF_2_n;
                     break;
                 case TOGGLE_OUTLET_3:
-                    screen_state = TOGGLE_CONF_3_y;
+                    screen_state = TOGGLE_CONF_3_n;
                     break;
                 case TOGGLE_OUTLET_4:
-                    screen_state = TOGGLE_CONF_4_y;
+                    screen_state = TOGGLE_CONF_4_n;
                     break;
                 case TOGGLE_OUTLET_5:
-                    screen_state = TOGGLE_CONF_5_y;
+                    screen_state = TOGGLE_CONF_5_n;
                     break;
                 case TOGGLE_OUTLET_6:
-                    screen_state = TOGGLE_CONF_6_y;
+                    screen_state = TOGGLE_CONF_6_n;
                     break;
                 case TOGGLE_CONF_1_y:
                     i2_address = i2_addrs[0];
@@ -607,7 +640,7 @@ __interrupt void Port_1(void)
             }
         }
 
-        if (!toggle_status || (screen_state == TEMP_HUM)) {
+        if (!toggle_status || update_state) {
             // display the screen
             refresh_screen_status = 1;
             display_status = 1;

@@ -16,9 +16,9 @@ enum state{INIT, HOME_1, HOME_2, HOME_3, HOME_4, HOME_5, HOME_6, HOME_7, HOME_8,
 
 // Function prototypes
 void display_screen(uint8_t state);
-void update_screen(uint8_t state, uint8_t outlet_num_abs, uint8_t outlet_status);
+void update_screen(uint8_t state, uint8_t outlet_num_abs);
 void update_th_info(void);
 void update_outlet_info(uint8_t outlet_num_abs);
-void update_outlet_status(uint8_t outlet_status, uint8_t outlet_num_abs);
+void update_outlet_status(uint8_t outlet_num_abs);
 
 #endif /* IN_PERSON_UI_H_ */

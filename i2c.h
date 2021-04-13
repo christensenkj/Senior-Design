@@ -27,7 +27,7 @@
 #endif
 
 // Definitions of buffer length
-#define BUFLEN      1024
+#define BUFLEN      512
 #define BUFELEM     128
 
 void i2c_init(void);

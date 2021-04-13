@@ -11,7 +11,7 @@
 #include "math_engine.h"
 
 // Definitions of buffer length
-#define BUFLEN      1024
+#define BUFLEN      512
 #define BUF_ELEM    128
 
 void format_strings(struct outlet_struct *outlet_infos, struct th_struct *th_info);

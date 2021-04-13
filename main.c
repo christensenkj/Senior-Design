@@ -108,7 +108,7 @@ int main(void)
             while(update_status);
             get_outlet_info(&outlet_infos[1]);
             update_status = 1;
-            // get temp/hum information via i2c
+            // get temp/hum information via dht11
             receive_th();
             // wait for the update to finish
             while(update_status);
@@ -151,7 +151,7 @@ void start_timerA0() {
     // configure timer A
     TA0CCTL0 = CCIE;                      // CCR0 interrupt enabled
     TA0CTL = TASSEL_1 + MC_1 + ID_3;      // SMCLK/8, upmode
-    TA0CCR0 =  20480;                     // Interrupt once every 5 second
+    TA0CCR0 =  20480/2;                     // Interrupt once every 5 second
 }
 
 // configure and start TA0
@@ -607,7 +607,7 @@ __interrupt void Port_1(void)
             }
         }
 
-        if (!toggle_status) {
+        if (!toggle_status || (screen_state == TEMP_HUM)) {
             // display the screen
             refresh_screen_status = 1;
             display_status = 1;

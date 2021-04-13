@@ -62,8 +62,8 @@ char screen_home_to_a[] = "Toggle Outlets <--";
 // Temp Hum Screen
 char screen_temp_hum_1[] = "Temperature and";
 char screen_temp_hum_2[] = "Humidity Display";
-char screen_temp_hum_3[] = "Temperature: 23.20 C";
-char screen_temp_hum_4[] = "Humidity: 32.45%";
+char screen_temp_hum_3[] = "Temperature: 00.00 C";
+char screen_temp_hum_4[] = "Humidity: 00.00% RH";
 
 // Outlet display strings
 char screen_outlet_2[] = "RMS Vol: 0.00    VAC";
@@ -363,10 +363,10 @@ void update_screen(uint8_t screen_state, uint8_t outlet_num_abs, uint8_t outlet_
 
 void update_th_info(void) {
     unsigned int i;
-    for (i = 13; i < 18; i++) {
+    for (i = 13; i < 15; i++) {
         screen_temp_hum_3[i] = res_t[i-13];
     }
-    for (i = 10; i < 15; i++) {
+    for (i = 10; i < 12; i++) {
         screen_temp_hum_4[i] = res_h[i-10];
     }
 }

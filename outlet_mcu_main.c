@@ -7,7 +7,7 @@
 // red: sda
 // black: scl
 
-extern int32_t circularBuffer[BUFELEM];
+extern int16_t circularBuffer[BUFELEM];
 
 volatile uint8_t TXData;
 volatile uint8_t RXData;
@@ -79,7 +79,7 @@ int main(void)
 void config_timerA0() {
     TA0CCTL0 = CCIE;                      // CCR0 interrupt enabled
     TA0CTL = TASSEL_2 + MC_1 + ID_0;      // SMCLK, upmode
-    TA0CCR0 =  569;                     // 1.8 kHz
+    TA0CCR0 =  533;                     // 1.8 kHz
 }
 
 void toggle_outlet() {

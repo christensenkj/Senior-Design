@@ -7,7 +7,7 @@
 // red: sda
 // black: scl
 
-extern uint32_t circularBuffer[BUFELEM];
+extern int32_t circularBuffer[BUFELEM];
 
 volatile uint8_t TXData;
 volatile uint8_t RXData;
@@ -21,6 +21,11 @@ uint8_t buf0;
 uint8_t buf1;
 uint8_t buf2;
 uint8_t buf3;
+
+volatile float cur_data0;
+volatile float cur_data1;
+volatile float cur_data2;
+volatile float vol_data;
 
 void toggle_outlet(void);
 void config_relay_pins(void);
@@ -36,7 +41,7 @@ int main(void)
     UCB0CTLW0 |= UCMODE_3; // I2C slave mode
     UCB0CTLW1 = UCASTP_2; // autom. STOP assertion
     UCB0TBCNT = BUFLEN; // TX 8 bytes of data
-    UCB0I2COA0 = 0x0044 + UCOAEN; // address slave is 12hex
+    UCB0I2COA0 = 0x0033 + UCOAEN; // address slave is 12hex
     P1SEL0 |= BIT6 | BIT7; // configure I2C pins (device specific)
 
     UCB0CTL1 &= ~UCSWRST; // eUSCI_B in operational state
@@ -44,11 +49,10 @@ int main(void)
 
     TXDataCtr = 0;
     toggle_status = 0;
-    outlet_status = 1;
+    outlet_status = 0;
     ADC_conversion = 0;
 
     config_relay_pins();
-
     adc_config(ADC_OVERFLOW_IE_DIS,ADC_CHANNEL0);               // Configure ADC Channel 3 (Voltage) and disable overflow interrupt
     adc_config(ADC_OVERFLOW_IE_DIS,ADC_CHANNEL1);               // Configure ADC Channel 3 (Voltage) and disable overflow interrupt
     adc_config(ADC_OVERFLOW_IE_DIS,ADC_CHANNEL2);               // Configure ADC Channel 3 (Voltage) and disable overflow interrupt
@@ -80,8 +84,8 @@ int main(void)
 
 void config_timerA0() {
     TA0CCTL0 = CCIE;                      // CCR0 interrupt enabled
-    TA0CTL = TASSEL_2 + MC_1 + ID_0;      // SMCLK/1, upmode
-    TA0CCR0 =  569;                     // 7680 Hz
+    TA0CTL = TASSEL_2 + MC_1 + ID_0;      // SMCLK/8, upmode
+    TA0CCR0 =  2880;                     // 7680 Hz
 }
 
 void toggle_outlet() {
@@ -89,15 +93,15 @@ void toggle_outlet() {
     switch(RXData) {
     case 0:
         // Toggle outlet 1
-        P1OUT ^= BIT3;
+        P1OUT ^= BIT0;
         break;
     case 1:
-        // Toggle outlet 1
-        P1OUT ^= BIT4;
+        // Toggle outlet 2
+        P1OUT ^= BIT1;
         break;
     case 2:
-        // Toggle outlet 1
-        P1OUT ^= BIT5;
+        // Toggle outlet 3
+        P1OUT ^= BIT2;
         break;
     default:
         break;
@@ -106,8 +110,8 @@ void toggle_outlet() {
 }
 
 void config_relay_pins() {
-    P1DIR |= BIT3 + BIT4 + BIT5;
-    P1OUT &= ~(BIT3 + BIT4 + BIT5);
+    P1DIR |= BIT0 + BIT1 + BIT2;
+    P1OUT &= ~(BIT0 + BIT1 + BIT2);
 }
 
 

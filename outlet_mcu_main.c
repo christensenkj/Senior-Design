@@ -22,11 +22,6 @@ uint8_t buf1;
 uint8_t buf2;
 uint8_t buf3;
 
-volatile float cur_data0;
-volatile float cur_data1;
-volatile float cur_data2;
-volatile float vol_data;
-
 void toggle_outlet(void);
 void config_relay_pins(void);
 void config_timerA0(void);
@@ -58,7 +53,6 @@ int main(void)
     adc_config(ADC_OVERFLOW_IE_DIS,ADC_CHANNEL2);               // Configure ADC Channel 3 (Voltage) and disable overflow interrupt
     adc_config(ADC_OVERFLOW_IE_DIS,ADC_CHANNEL3);               // Configure ADC Channel 3 (Voltage) and disable overflow interrupt
 
-
     // configure timer A0
     config_timerA0();
 
@@ -84,8 +78,8 @@ int main(void)
 
 void config_timerA0() {
     TA0CCTL0 = CCIE;                      // CCR0 interrupt enabled
-    TA0CTL = TASSEL_2 + MC_1 + ID_0;      // SMCLK/8, upmode
-    TA0CCR0 =  2880;                     // 7680 Hz
+    TA0CTL = TASSEL_2 + MC_1 + ID_0;      // SMCLK, upmode
+    TA0CCR0 =  569;                     // 1.8 kHz
 }
 
 void toggle_outlet() {

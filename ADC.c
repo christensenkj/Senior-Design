@@ -17,8 +17,8 @@ extern uint8_t buf1;
 extern uint8_t buf2;
 extern uint8_t buf3;
 
-uint32_t cal_offset_i = 0x80;
-uint32_t cal_offset_v = 0x48;
+uint16_t cal_offset_i = 0x80;
+uint16_t cal_offset_v = 0x48;
 
 static void internal_config_adc(ADC_CONFIG_STRUCT *config);
 static void write_ADC_buffer0(void);
@@ -26,7 +26,7 @@ static void write_ADC_buffer1(void);
 static void write_ADC_buffer2(void);
 static void write_ADC_buffer3(void);
 
-int32_t circularBuffer[BUFELEM];
+int16_t circularBuffer[BUFELEM];
 
 
 void adc_config(bool overFlow, uint8_t adcChannel) {
@@ -109,7 +109,7 @@ __interrupt void SD24_ISR(void) {
 }
 
 void write_ADC_buffer0() {
-    int32_t tempRead_lower = SD24MEM0 - cal_offset_i;
+    int16_t tempRead_lower = SD24MEM0 - cal_offset_i;
     circularBuffer[buf_ptr_0] = tempRead_lower;
     buf_ptr_0++;
     if (buf_ptr_0 == 64) {
@@ -119,7 +119,7 @@ void write_ADC_buffer0() {
 }
 
 void write_ADC_buffer1() {
-    int32_t tempRead_lower = SD24MEM1 - cal_offset_i;
+    int16_t tempRead_lower = SD24MEM1 - cal_offset_i;
     circularBuffer[buf_ptr_1] = tempRead_lower;
     buf_ptr_1++;
     if (buf_ptr_1 == 96) {
@@ -129,7 +129,7 @@ void write_ADC_buffer1() {
 }
 
 void write_ADC_buffer2() {
-    int32_t tempRead_lower = SD24MEM2 - cal_offset_i;
+    int16_t tempRead_lower = SD24MEM2 - cal_offset_i;
     circularBuffer[buf_ptr_2] = tempRead_lower;
     buf_ptr_2++;
     if (buf_ptr_2 == 128) {
@@ -139,7 +139,7 @@ void write_ADC_buffer2() {
 }
 
 void write_ADC_buffer3() {
-    int32_t tempRead_lower = SD24MEM3 - cal_offset_v;
+    int16_t tempRead_lower = SD24MEM3 - cal_offset_v;
     circularBuffer[buf_ptr_3] = tempRead_lower;
     buf_ptr_3++;
     if (buf_ptr_3 == 32) {

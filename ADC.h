@@ -12,7 +12,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define BUFLEN      1024
+#define BUFLEN      512
 #define BUFELEM     128
 
 enum adc_channels {

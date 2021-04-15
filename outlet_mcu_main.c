@@ -36,7 +36,7 @@ int main(void)
     UCB0CTLW0 |= UCMODE_3; // I2C slave mode
     UCB0CTLW1 = UCASTP_2; // autom. STOP assertion
     UCB0TBCNT = BUFLEN; // TX 8 bytes of data
-    UCB0I2COA0 = 0x0033 + UCOAEN; // address slave is 12hex
+    UCB0I2COA0 = 0x0044 + UCOAEN; // address slave is 12hex
     P1SEL0 |= BIT6 | BIT7; // configure I2C pins (device specific)
 
     UCB0CTL1 &= ~UCSWRST; // eUSCI_B in operational state

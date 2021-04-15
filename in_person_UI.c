@@ -13,21 +13,21 @@
 
 
 // first outlet mcu
-extern char res_v_1[7];
-extern char res_i_1_1[7];
-extern char res_p_1_1[7];
-extern char res_i_2_1[7];
-extern char res_p_2_1[7];
-extern char res_i_3_1[7];
-extern char res_p_3_1[7];
+extern char res_v_1[6];
+extern char res_i_1_1[6];
+extern char res_p_1_1[6];
+extern char res_i_2_1[6];
+extern char res_p_2_1[6];
+extern char res_i_3_1[6];
+extern char res_p_3_1[6];
 // second outlet mcu
-extern char res_v_2[7];
-extern char res_i_1_2[7];
-extern char res_p_1_2[7];
-extern char res_i_2_2[7];
-extern char res_p_2_2[7];
-extern char res_i_3_2[7];
-extern char res_p_3_2[7];
+extern char res_v_2[6];
+extern char res_i_1_2[6];
+extern char res_p_1_2[6];
+extern char res_i_2_2[6];
+extern char res_p_2_2[6];
+extern char res_i_3_2[6];
+extern char res_p_3_2[6];
 // temperature and humidity
 extern char res_t[5];
 extern char res_h[5];
@@ -69,9 +69,9 @@ char screen_temp_hum_3[] = "Temperature: 00.00 C";
 char screen_temp_hum_4[] = "Humidity: 00.00% RH";
 
 // Outlet display strings
-char screen_outlet_2[] = "RMS Vol:   00.00 VAC";
-char screen_outlet_3[] = "RMS Cur:   00.00   A";
-char screen_outlet_4[] = "Aprnt Pwr:   00.00 W";
+char screen_outlet_2[] = "RMS Vol:   00.00    ";
+char screen_outlet_3[] = "RMS Cur:   00.00    ";
+char screen_outlet_4[] = "Aprnt Pwr:   00.00  ";
 
 // Outlet Title Screen
 char screen_outlet_1_1[] = "Outlet 1 Status: OFF";
@@ -451,6 +451,13 @@ void update_outlet_info(uint8_t outlet_num_abs) {
         }
         break;
     }
+//    screen_outlet_2[17] = 'V';
+//    screen_outlet_2[18] = 'A';
+//    screen_outlet_2[19] = 'C';
+//    screen_outlet_3[19] = 'A';
+//    screen_outlet_4[19] = 'W';
+
+
 }
 
 void update_outlet_status(uint8_t outlet_num_abs) {

@@ -121,7 +121,7 @@ void close(uint8_t sn) {
  * Clear a local buffer, such as the local rx buffer or tx buffer
  * Function used in msp_server.c to clear local rx and tx buffers
  */
-void clearBuffer(uint8_t* array, uint8_t length) {
+void clearBuffer(uint8_t* array, uint16_t length) {
     while ( length != 0) {
         *array++ = 0;
         length--;

@@ -49,7 +49,7 @@ extern char res_t[5];
 extern char res_h[5];
 
 // keep track of the status of outlets
-extern uint8_t outlet_statuses[6];
+extern uint8_t outlet_statuses[12];
 
 // INIT Screen
 char screen_init_1[] = "WELCOME TO ";
@@ -111,9 +111,9 @@ char screen_outlet_6_1[] = "Outlet 6 Status: OFF";
 char screen_outlet_7_1[] = "Outlet 7 Status: OFF";
 char screen_outlet_8_1[] = "Outlet 8 Status: OFF";
 char screen_outlet_9_1[] = "Outlet 9 Status: OFF";
-char screen_outlet_10_1[] = "Outlet 10 Status: OFF";
-char screen_outlet_11_1[] = "Outlet 11 Status: OFF";
-char screen_outlet_12_1[] = "Outlet 12 Status: OFF";
+char screen_outlet_10_1[] = "Outlet 10 Status:OFF";
+char screen_outlet_11_1[] = "Outlet 11 Status:OFF";
+char screen_outlet_12_1[] = "Outlet 12 Status:OFF";
 
 // Toggle Outlet Screen
 char screen_toggle_outlets_top[] = "Toggle Outlets";
@@ -366,52 +366,52 @@ void display_screen(uint8_t screen_state) {
             lcdSetText(screen_toggle_outlets_o4_a, 0, 0);
             lcdSetText(screen_toggle_outlets_o5, 1, 0);
             lcdSetText(screen_toggle_outlets_o6, 2, 0);
-            lcdSetText(screen_toggle_outlets_o7, 2, 0);
+            lcdSetText(screen_toggle_outlets_o7, 3, 0);
             break;
         case TOGGLE_OUTLET_5:
             lcdSetText(screen_toggle_outlets_o4, 0, 0);
             lcdSetText(screen_toggle_outlets_o5_a, 1, 0);
             lcdSetText(screen_toggle_outlets_o6, 2, 0);
-            lcdSetText(screen_toggle_outlets_o7, 2, 0);
+            lcdSetText(screen_toggle_outlets_o7, 3, 0);
             break;
         case TOGGLE_OUTLET_6:
             lcdSetText(screen_toggle_outlets_o4, 0, 0);
             lcdSetText(screen_toggle_outlets_o5, 1, 0);
             lcdSetText(screen_toggle_outlets_o6_a, 2, 0);
-            lcdSetText(screen_toggle_outlets_o7, 2, 0);
+            lcdSetText(screen_toggle_outlets_o7, 3, 0);
             break;
         case TOGGLE_OUTLET_7:
             lcdSetText(screen_toggle_outlets_o4, 0, 0);
             lcdSetText(screen_toggle_outlets_o5, 1, 0);
             lcdSetText(screen_toggle_outlets_o6, 2, 0);
-            lcdSetText(screen_toggle_outlets_o7_a, 2, 0);
+            lcdSetText(screen_toggle_outlets_o7_a, 3, 0);
             break;
         case TOGGLE_OUTLET_8:
-            lcdSetText(screen_toggle_outlets_o8_a, 1, 0);
-            lcdSetText(screen_toggle_outlets_o9, 2, 0);
-            lcdSetText(screen_toggle_outlets_o10, 0, 0);
-            lcdSetText(screen_toggle_outlets_o11, 1, 0);
+            lcdSetText(screen_toggle_outlets_o8_a, 0, 0);
+            lcdSetText(screen_toggle_outlets_o9, 1, 0);
+            lcdSetText(screen_toggle_outlets_o10, 2, 0);
+            lcdSetText(screen_toggle_outlets_o11, 3, 0);
             break;
         case TOGGLE_OUTLET_9:
-            lcdSetText(screen_toggle_outlets_o8, 1, 0);
-            lcdSetText(screen_toggle_outlets_o9_a, 2, 0);
-            lcdSetText(screen_toggle_outlets_o10, 0, 0);
-            lcdSetText(screen_toggle_outlets_o11, 1, 0);
+            lcdSetText(screen_toggle_outlets_o8, 0, 0);
+            lcdSetText(screen_toggle_outlets_o9_a, 1, 0);
+            lcdSetText(screen_toggle_outlets_o10, 2, 0);
+            lcdSetText(screen_toggle_outlets_o11, 3, 0);
             break;
         case TOGGLE_OUTLET_10:
-            lcdSetText(screen_toggle_outlets_o8, 1, 0);
-            lcdSetText(screen_toggle_outlets_o9, 2, 0);
-            lcdSetText(screen_toggle_outlets_o10_a, 0, 0);
-            lcdSetText(screen_toggle_outlets_o11, 1, 0);
+            lcdSetText(screen_toggle_outlets_o8, 0, 0);
+            lcdSetText(screen_toggle_outlets_o9, 1, 0);
+            lcdSetText(screen_toggle_outlets_o10_a, 2, 0);
+            lcdSetText(screen_toggle_outlets_o11, 3, 0);
             break;
         case TOGGLE_OUTLET_11:
-            lcdSetText(screen_toggle_outlets_o8, 1, 0);
-            lcdSetText(screen_toggle_outlets_o9, 2, 0);
-            lcdSetText(screen_toggle_outlets_o10, 0, 0);
-            lcdSetText(screen_toggle_outlets_o11_a, 1, 0);
+            lcdSetText(screen_toggle_outlets_o8, 0, 0);
+            lcdSetText(screen_toggle_outlets_o9, 1, 0);
+            lcdSetText(screen_toggle_outlets_o10, 2, 0);
+            lcdSetText(screen_toggle_outlets_o11_a, 3, 0);
             break;
         case TOGGLE_OUTLET_12:
-            lcdSetText(screen_toggle_outlets_o12_a, 2, 0);
+            lcdSetText(screen_toggle_outlets_o12_a, 0, 0);
             break;
         case TOGGLE_CONF_1_y:
             lcdSetText(screen_toggle_conf_1_top, 0, 0);
@@ -602,40 +602,40 @@ void update_screen(uint8_t screen_state, uint8_t outlet_num_abs) {
     case OUTLET_12:
         update_outlet_info(outlet_num_abs);
         break;
-    case TOGGLE_CONF_1_y:
+    case TOGGLE_CONF_1_n:
         update_outlet_status(outlet_num_abs);
         break;
-    case TOGGLE_CONF_2_y:
+    case TOGGLE_CONF_2_n:
         update_outlet_status(outlet_num_abs);
         break;
-    case TOGGLE_CONF_3_y:
+    case TOGGLE_CONF_3_n:
         update_outlet_status(outlet_num_abs);
         break;
-    case TOGGLE_CONF_4_y:
+    case TOGGLE_CONF_4_n:
         update_outlet_status(outlet_num_abs);
         break;
-    case TOGGLE_CONF_5_y:
+    case TOGGLE_CONF_5_n:
         update_outlet_status(outlet_num_abs);
         break;
-    case TOGGLE_CONF_6_y:
+    case TOGGLE_CONF_6_n:
         update_outlet_status(outlet_num_abs);
         break;
-    case TOGGLE_CONF_7_y:
+    case TOGGLE_CONF_7_n:
         update_outlet_status(outlet_num_abs);
         break;
-    case TOGGLE_CONF_8_y:
+    case TOGGLE_CONF_8_n:
         update_outlet_status(outlet_num_abs);
         break;
-    case TOGGLE_CONF_9_y:
+    case TOGGLE_CONF_9_n:
         update_outlet_status(outlet_num_abs);
         break;
-    case TOGGLE_CONF_10_y:
+    case TOGGLE_CONF_10_n:
         update_outlet_status(outlet_num_abs);
         break;
-    case TOGGLE_CONF_11_y:
+    case TOGGLE_CONF_11_n:
         update_outlet_status(outlet_num_abs);
         break;
-    case TOGGLE_CONF_12_y:
+    case TOGGLE_CONF_12_n:
         update_outlet_status(outlet_num_abs);
         break;
     default:

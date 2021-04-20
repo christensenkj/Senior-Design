@@ -25,9 +25,9 @@ uint8_t toggle_status;
 uint8_t update_status;
 uint8_t refresh_screen_status;
 
-extern uint8_t outlet_num_abs;
+//extern uint8_t outlet_num_abs;
 
-uint8_t outlet_statuses[6] = {0,0,0,0,0,0};
+uint8_t outlet_statuses[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
 
 void i2c_init(void) {
     I2C_REN |= (I2C_SDA_PIN + I2C_SCL_PIN);
@@ -137,8 +137,6 @@ __interrupt void USCI_B0_ISR(void) {
           UCB0TXBUF = TXData;
           // increment the bytes sent counter
           TXDataCtr++;
-          // toggle outlet status
-          outlet_statuses[outlet_num_abs-1] = !outlet_statuses[outlet_num_abs-1];
       }
       // If the byte was sent, send a stop condition
       else {

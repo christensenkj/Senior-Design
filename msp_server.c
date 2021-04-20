@@ -12,6 +12,7 @@
 #include "msp_config.h"
 #include "w5500.h"
 #include "i2c.h"
+//#include "in_person_UI.c"
 
 // status from Sn_SR
 extern uint8_t status;
@@ -19,23 +20,63 @@ extern uint8_t status;
 extern uint8_t toggle_status;
 extern uint8_t outlet_statuses[12];
 // strings from i2c updates
-extern char res_v_1[5];
-extern char res_i_1_1[5];
-extern char res_p_1_1[5];
-extern char res_i_2_1[5];
-extern char res_p_2_1[5];
-extern char res_i_3_1[5];
-extern char res_p_3_1[5];
-extern char res_v_2[5];
-extern char res_i_1_2[5];
-extern char res_p_1_2[5];
-extern char res_i_2_2[5];
-extern char res_p_2_2[5];
-extern char res_i_3_2[5];
-extern char res_p_3_2[5];
+extern char res_v_1[6];
+extern char res_i_1_1[6];
+extern char res_p_1_1[6];
+extern char res_i_2_1[6];
+extern char res_p_2_1[6];
+extern char res_i_3_1[6];
+extern char res_p_3_1[6];
+extern char res_v_2[6];
+extern char res_i_1_2[6];
+extern char res_p_1_2[6];
+extern char res_i_2_2[6];
+extern char res_p_2_2[6];
+extern char res_i_3_2[6];
+extern char res_p_3_2[6];
+extern char res_v_3[6];
+extern char res_i_1_3[6];
+extern char res_p_1_3[6];
+extern char res_i_2_3[6];
+extern char res_p_2_3[6];
+extern char res_i_3_3[6];
+extern char res_p_3_3[6];
+extern char res_v_4[6];
+extern char res_i_1_4[6];
+extern char res_p_1_4[6];
+extern char res_i_2_4[6];
+extern char res_p_2_4[6];
+extern char res_i_3_4[6];
+extern char res_p_3_4[6];
 extern char res_t[5];
 extern char res_h[5];
 extern char outlet_status_string[23];
+
+// extern status strings
+extern char screen_outlet_1_1[];
+extern char screen_outlet_2_1[];
+extern char screen_outlet_3_1[];
+extern char screen_outlet_4_1[];
+extern char screen_outlet_5_1[];
+extern char screen_outlet_6_1[];
+extern char screen_outlet_7_1[];
+extern char screen_outlet_8_1[];
+extern char screen_outlet_9_1[];
+extern char screen_outlet_10_1[];
+extern char screen_outlet_11_1[];
+extern char screen_outlet_12_1[];
+extern char screen_toggle_conf_1_status[];
+extern char screen_toggle_conf_2_status[];
+extern char screen_toggle_conf_3_status[];
+extern char screen_toggle_conf_4_status[];
+extern char screen_toggle_conf_5_status[];
+extern char screen_toggle_conf_6_status[];
+extern char screen_toggle_conf_7_status[];
+extern char screen_toggle_conf_8_status[];
+extern char screen_toggle_conf_9_status[];
+extern char screen_toggle_conf_10_status[];
+extern char screen_toggle_conf_11_status[];
+extern char screen_toggle_conf_12_status[];
 
 // W5500 MAC address (physical address listed on a sticker on the wiznet board itself)
 const uint8_t MAC_ADDR[6] = {0x00, 0x08, 0xDC, 0x5F, 0xED, 0x0A};
@@ -50,6 +91,206 @@ uint8_t rx_buffer[RX_MAX_BUF_SIZE];
 uint8_t rx_buffer_pointer = 0;
 uint8_t tx_buffer_pointer = 0;
 uint16_t bytes_received = 0;
+
+void update_outlet_status_server(uint8_t outlet_num_abs) {
+    char status_on[3] = "ON ";
+    char status_off[3] = "OFF";
+    switch (outlet_num_abs) {
+    case 1:
+        if (outlet_statuses[outlet_num_abs-1]) {
+            unsigned int i;
+            for (i = 17; i < 20; i++) {
+                screen_outlet_1_1[i] = status_on[i-17];
+                screen_toggle_conf_1_status[i-1] = status_on[i-17];
+            }
+        }
+        else {
+            unsigned int i;
+            for (i = 17; i < 20; i++) {
+                screen_outlet_1_1[i] = status_off[i-17];
+                screen_toggle_conf_1_status[i-1] = status_off[i-17];
+            }
+        }
+        break;
+    case 2:
+        if (outlet_statuses[outlet_num_abs-1]) {
+            unsigned int i;
+            for (i = 17; i < 20; i++) {
+                screen_outlet_2_1[i] = status_on[i-17];
+                screen_toggle_conf_2_status[i-1] = status_on[i-17];
+            }
+        }
+        else {
+            unsigned int i;
+            for (i = 17; i < 20; i++) {
+                screen_outlet_2_1[i] = status_off[i-17];
+                screen_toggle_conf_2_status[i-1] = status_off[i-17];
+            }
+        }
+        break;
+    case 3:
+        if (outlet_statuses[outlet_num_abs-1]) {
+            unsigned int i;
+            for (i = 17; i < 20; i++) {
+                screen_outlet_3_1[i] = status_on[i-17];
+                screen_toggle_conf_3_status[i-1] = status_on[i-17];
+            }
+        }
+        else {
+            unsigned int i;
+            for (i = 17; i < 20; i++) {
+                screen_outlet_3_1[i] = status_off[i-17];
+                screen_toggle_conf_3_status[i-1] = status_off[i-17];
+            }
+        }
+        break;
+    case 4:
+        if (outlet_statuses[outlet_num_abs-1]) {
+            unsigned int i;
+            for (i = 17; i < 20; i++) {
+                screen_outlet_4_1[i] = status_on[i-17];
+                screen_toggle_conf_4_status[i-1] = status_on[i-17];
+            }
+        }
+        else {
+            unsigned int i;
+            for (i = 17; i < 20; i++) {
+                screen_outlet_4_1[i] = status_off[i-17];
+                screen_toggle_conf_4_status[i-1] = status_off[i-17];
+            }
+        }
+        break;
+    case 5:
+        if (outlet_statuses[outlet_num_abs-1]) {
+            unsigned int i;
+            for (i = 17; i < 20; i++) {
+                screen_outlet_5_1[i] = status_on[i-17];
+                screen_toggle_conf_5_status[i-1] = status_on[i-17];
+            }
+        }
+        else {
+            unsigned int i;
+            for (i = 17; i < 20; i++) {
+                screen_outlet_5_1[i] = status_off[i-17];
+                screen_toggle_conf_5_status[i-1] = status_off[i-17];
+            }
+        }
+        break;
+    case 6:
+        if (outlet_statuses[outlet_num_abs-1]) {
+            unsigned int i;
+            for (i = 17; i < 20; i++) {
+                screen_outlet_6_1[i] = status_on[i-17];
+                screen_toggle_conf_6_status[i-1] = status_on[i-17];
+            }
+        }
+        else {
+            unsigned int i;
+            for (i = 17; i < 20; i++) {
+                screen_outlet_6_1[i] = status_off[i-17];
+                screen_toggle_conf_6_status[i-1] = status_off[i-17];
+            }
+        }
+        break;
+    case 7:
+        if (outlet_statuses[outlet_num_abs-1]) {
+            unsigned int i;
+            for (i = 17; i < 20; i++) {
+                screen_outlet_7_1[i] = status_on[i-17];
+                screen_toggle_conf_7_status[i-1] = status_on[i-17];
+            }
+        }
+        else {
+            unsigned int i;
+            for (i = 17; i < 20; i++) {
+                screen_outlet_7_1[i] = status_off[i-17];
+                screen_toggle_conf_7_status[i-1] = status_off[i-17];
+            }
+        }
+        break;
+    case 8:
+        if (outlet_statuses[outlet_num_abs-1]) {
+            unsigned int i;
+            for (i = 17; i < 20; i++) {
+                screen_outlet_8_1[i] = status_on[i-17];
+                screen_toggle_conf_8_status[i-1] = status_on[i-17];
+            }
+        }
+        else {
+            unsigned int i;
+            for (i = 17; i < 20; i++) {
+                screen_outlet_8_1[i] = status_off[i-17];
+                screen_toggle_conf_8_status[i-1] = status_off[i-17];
+            }
+        }
+        break;
+    case 9:
+        if (outlet_statuses[outlet_num_abs-1]) {
+            unsigned int i;
+            for (i = 17; i < 20; i++) {
+                screen_outlet_9_1[i] = status_on[i-17];
+                screen_toggle_conf_9_status[i-1] = status_on[i-17];
+            }
+        }
+        else {
+            unsigned int i;
+            for (i = 17; i < 20; i++) {
+                screen_outlet_9_1[i] = status_off[i-17];
+                screen_toggle_conf_9_status[i-1] = status_off[i-17];
+            }
+        }
+        break;
+    case 10:
+        if (outlet_statuses[outlet_num_abs-1]) {
+            unsigned int i;
+            for (i = 17; i < 20; i++) {
+                screen_outlet_10_1[i] = status_on[i-17];
+                screen_toggle_conf_10_status[i-1] = status_on[i-17];
+            }
+        }
+        else {
+            unsigned int i;
+            for (i = 17; i < 20; i++) {
+                screen_outlet_10_1[i] = status_off[i-17];
+                screen_toggle_conf_10_status[i-1] = status_off[i-17];
+            }
+        }
+        break;
+    case 11:
+        if (outlet_statuses[outlet_num_abs-1]) {
+            unsigned int i;
+            for (i = 17; i < 20; i++) {
+                screen_outlet_11_1[i] = status_on[i-17];
+                screen_toggle_conf_11_status[i-1] = status_on[i-17];
+            }
+        }
+        else {
+            unsigned int i;
+            for (i = 17; i < 20; i++) {
+                screen_outlet_11_1[i] = status_off[i-17];
+                screen_toggle_conf_11_status[i-1] = status_off[i-17];
+            }
+        }
+        break;
+    case 12:
+        if (outlet_statuses[outlet_num_abs-1]) {
+            unsigned int i;
+            for (i = 17; i < 20; i++) {
+                screen_outlet_12_1[i] = status_on[i-17];
+                screen_toggle_conf_12_status[i-1] = status_on[i-17];
+            }
+        }
+        else {
+            unsigned int i;
+            for (i = 17; i < 20; i++) {
+                screen_outlet_12_1[i] = status_off[i-17];
+                screen_toggle_conf_12_status[i-1] = status_off[i-17];
+            }
+        }
+        break;
+    }
+}
+
 
 /*
  * Reset the W5500 upon startup by toggling the hardware reset pin
@@ -246,73 +487,86 @@ void receive_cmd(uint8_t sn, uint16_t len) {
     uint32_t recvd_len = recv(sn, len);
     printf("\n%d\n", rx_buffer[0]);
 
-    if (rx_buffer[0] == 'C') {
+    if (rx_buffer[0] == 'E') {
         char str[28] = "OK\n12\n";
         write_string_to_tx_buffer(str);
         send(sn);
     }
 
     else if (rx_buffer[0] == '1' || rx_buffer[0] == '2' || rx_buffer[0] == '3' || rx_buffer[0] == '4' || rx_buffer[0] == '5' || rx_buffer[0] == '6' ||
-            rx_buffer[0] == '7' || rx_buffer[0] == '8' || rx_buffer[0] == '9' || rx_buffer[0] == '10' || rx_buffer[0] == '11' || rx_buffer[0] == '12') {
+            rx_buffer[0] == '7' || rx_buffer[0] == '8' || rx_buffer[0] == '9' ||
+            rx_buffer[0] == 'A' || rx_buffer[0] == 'B' || rx_buffer[0] == 'C'){
         if (rx_buffer[0] == '1') {
             i2_address = 0x33;
             outlet_num = 2;
             abs_outlet_num = 1;
+            outlet_statuses[0] = !outlet_statuses[0];
         }
         else if (rx_buffer[0] == '2') {
             i2_address = 0x33;
             outlet_num = 1;
             abs_outlet_num = 2;
+            outlet_statuses[1] = !outlet_statuses[1];
         }
         else if (rx_buffer[0] == '3') {
             i2_address = 0x33;
             outlet_num = 0;
             abs_outlet_num = 3;
+            outlet_statuses[2] = !outlet_statuses[2];
         }
         else if (rx_buffer[0] == '4') {
             i2_address = 0x44;
             outlet_num = 2;
             abs_outlet_num = 4;
+            outlet_statuses[3] = !outlet_statuses[3];
         }
         else if (rx_buffer[0] == '5') {
             i2_address = 0x44;
             outlet_num = 1;
             abs_outlet_num = 5;
+            outlet_statuses[4] = !outlet_statuses[4];
         }
         else if (rx_buffer[0] == '6') {
             i2_address = 0x44;
             outlet_num = 0;
             abs_outlet_num = 6;
+            outlet_statuses[5] = !outlet_statuses[5];
         }
         else if (rx_buffer[0] == '7') {
             i2_address = 0x55;
             outlet_num = 2;
             abs_outlet_num = 7;
+            outlet_statuses[6] = !outlet_statuses[6];
         }
         else if (rx_buffer[0] == '8') {
             i2_address = 0x55;
             outlet_num = 1;
             abs_outlet_num = 8;
+            outlet_statuses[7] = !outlet_statuses[7];
         }
         else if (rx_buffer[0] == '9') {
             i2_address = 0x55;
             outlet_num = 0;
             abs_outlet_num = 9;
+            outlet_statuses[8] = !outlet_statuses[8];
         }
-        else if (rx_buffer[0] == '10') {
+        else if (rx_buffer[0] == 'A') {
             i2_address = 0x66;
             outlet_num = 2;
             abs_outlet_num = 10;
+            outlet_statuses[9] = !outlet_statuses[9];
         }
-        else if (rx_buffer[0] == '11') {
+        else if (rx_buffer[0] == 'B') {
             i2_address = 0x66;
             outlet_num = 1;
             abs_outlet_num = 11;
+            outlet_statuses[10] = !outlet_statuses[10];
         }
-        else if (rx_buffer[0] == '12') {
+        else if (rx_buffer[0] == 'C') {
             i2_address = 0x66;
             outlet_num = 0;
             abs_outlet_num = 12;
+            outlet_statuses[11] = !outlet_statuses[11];
         }
         // send a toggle command to desired outlet via i2c
         toggle_status = 1;
@@ -320,8 +574,10 @@ void receive_cmd(uint8_t sn, uint16_t len) {
         while(toggle_status);
         char str[128] = "OK\n\n";
         write_string_to_tx_buffer(str);
-        outlet_statuses[abs_outlet_num-1] = !outlet_statuses[abs_outlet_num-1];
         send(sn);
+        sprintf(outlet_status_string, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", outlet_statuses[0], outlet_statuses[1], outlet_statuses[2], outlet_statuses[3], outlet_statuses[4], outlet_statuses[5],
+                outlet_statuses[6], outlet_statuses[7], outlet_statuses[8], outlet_statuses[9], outlet_statuses[10], outlet_statuses[11]);
+        update_outlet_status_server(abs_outlet_num);
     }
 
     else {
@@ -342,9 +598,10 @@ void send_data_onitsown(uint8_t sn, uint16_t len) {
     write_string_to_tx_buffer(",");
     write_string_to_tx_buffer(res_h);
     write_string_to_tx_buffer(",");
-    // send outlet board mcu 1 info
+    // send voltage
     write_string_to_tx_buffer(res_v_1);
     write_string_to_tx_buffer(",");
+    // send outlet board mcu 1 info
     write_string_to_tx_buffer(res_i_1_1);
     write_string_to_tx_buffer(",");
     write_string_to_tx_buffer(res_p_1_1);
@@ -358,8 +615,6 @@ void send_data_onitsown(uint8_t sn, uint16_t len) {
     write_string_to_tx_buffer(res_p_3_1);
     write_string_to_tx_buffer(",");
     // send outlet board mcu 2 info
-    write_string_to_tx_buffer(res_v_2);
-    write_string_to_tx_buffer(",");
     write_string_to_tx_buffer(res_i_1_2);
     write_string_to_tx_buffer(",");
     write_string_to_tx_buffer(res_p_1_2);
@@ -371,10 +626,8 @@ void send_data_onitsown(uint8_t sn, uint16_t len) {
     write_string_to_tx_buffer(res_i_3_2);
     write_string_to_tx_buffer(",");
     write_string_to_tx_buffer(res_p_3_2);
-    write_string_to_tx_buffer("\n");
-    // send outlet board mcu 3 info
-    write_string_to_tx_buffer(res_v_3);
     write_string_to_tx_buffer(",");
+    // send outlet board mcu 3 info
     write_string_to_tx_buffer(res_i_1_3);
     write_string_to_tx_buffer(",");
     write_string_to_tx_buffer(res_p_1_3);
@@ -388,8 +641,6 @@ void send_data_onitsown(uint8_t sn, uint16_t len) {
     write_string_to_tx_buffer(res_p_3_3);
     write_string_to_tx_buffer(",");
     // send outlet board mcu 4 info
-    write_string_to_tx_buffer(res_v_4);
-    write_string_to_tx_buffer(",");
     write_string_to_tx_buffer(res_i_1_4);
     write_string_to_tx_buffer(",");
     write_string_to_tx_buffer(res_p_1_4);
@@ -401,9 +652,11 @@ void send_data_onitsown(uint8_t sn, uint16_t len) {
     write_string_to_tx_buffer(res_i_3_4);
     write_string_to_tx_buffer(",");
     write_string_to_tx_buffer(res_p_3_4);
+    write_string_to_tx_buffer(",");
     // send outlet statuses
     write_string_to_tx_buffer(outlet_status_string);
     write_string_to_tx_buffer("\n");
+    send(sn);
 }
 
 /*
@@ -443,7 +696,7 @@ void net_process_socket_receiver(uint8_t sn, uint16_t port)
 void net_process_socket_sender(uint8_t sn, uint16_t port)
 {
     unsigned char state = SOCK_CLOSED;
-    unsigned short len = 400;
+    unsigned short len = 512;
 
     state = getSn_SR(sn);
     switch (state) {
@@ -463,3 +716,4 @@ void net_process_socket_sender(uint8_t sn, uint16_t port)
             break;
     }
 }
+

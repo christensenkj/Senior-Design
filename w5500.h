@@ -283,7 +283,7 @@ void listen(uint8_t sn);
 void startListening(uint8_t sn);
 void disconnect(uint8_t sn);
 void close(uint8_t sn);
-void clearBuffer(uint8_t* array, uint8_t length);
+void clearBuffer(uint8_t* array, uint16_t length);
 
 
 #endif

@@ -127,6 +127,8 @@ int main(void) {
             P1IE &= ~(BIT0 + BIT1 + BIT2 + BIT3 + BIT4);
             i2c_send_toggle(i2_address, outlet_num);
             while(toggle_status);
+            // toggle outlet status
+            outlet_statuses[outlet_num_abs-1] = !outlet_statuses[outlet_num_abs-1];
             // update the LCD screens with the new information
             refresh_screen_status = 1;
             toggle_ready = 1;

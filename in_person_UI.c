@@ -97,9 +97,9 @@ char screen_temp_hum_3[] = "Temperature: 00.00 C";
 char screen_temp_hum_4[] = "Humidity: 00.00% RH";
 
 // Outlet display strings
-char screen_outlet_2[] = "RMS Vol:   00.00    ";
-char screen_outlet_3[] = "RMS Cur:   00.00    ";
-char screen_outlet_4[] = "Aprnt Pwr:   00.00  ";
+char screen_outlet_2[] = "RMS Vol(V):   00.00 ";
+char screen_outlet_3[] = "RMS Cur(A):   00.00 ";
+char screen_outlet_4[] = "Aprnt Pwr(W):  00.00";
 
 // Outlet Title Screen
 char screen_outlet_1_1[] = "Outlet 1 Status: OFF";
@@ -659,135 +659,135 @@ void update_outlet_info(uint8_t outlet_num_abs) {
     unsigned int k;
     switch (outlet_num_abs) {
     case 1:
-        for (i = 9; i < 15; i++) {
-            screen_outlet_2[i] = res_v_1[i-9];
+        for (i = 11; i < 17; i++) {
+            screen_outlet_2[i] = res_v_1[i-11];
         }
-        for (j = 9; j < 15; j++) {
-            screen_outlet_3[j] = res_i_1_1[j-9];
+        for (j = 11; j < 17; j++) {
+            screen_outlet_3[j] = res_i_1_1[j-11];
         }
-        for (k = 11; k < 17; k++) {
-            screen_outlet_4[k] = res_p_1_1[k-11];
+        for (k = 13; k < 19; k++) {
+            screen_outlet_4[k] = res_p_1_1[k-13];
         }
         break;
     case 2:
-        for (i = 9; i < 15; i++) {
-            screen_outlet_2[i] = res_v_1[i-9];
+        for (i = 11; i < 17; i++) {
+            screen_outlet_2[i] = res_v_1[i-11];
         }
-        for (j = 9; j < 15; j++) {
-            screen_outlet_3[j] = res_i_2_1[j-9];
+        for (j = 11; j < 17; j++) {
+            screen_outlet_3[j] = res_i_2_1[j-11];
         }
-        for (k = 11; k < 17; k++) {
-            screen_outlet_4[k] = res_p_2_1[k-11];
+        for (k = 13; k < 19; k++) {
+            screen_outlet_4[k] = res_p_2_1[k-13];
         }
         break;
     case 3:
-        for (i = 9; i < 15; i++) {
-            screen_outlet_2[i] = res_v_1[i-9];
+        for (i = 11; i < 17; i++) {
+            screen_outlet_2[i] = res_v_1[i-11];
         }
-        for (j = 9; j < 15; j++) {
-            screen_outlet_3[j] = res_i_3_1[j-9];
+        for (j = 11; j < 17; j++) {
+            screen_outlet_3[j] = res_i_3_1[j-11];
         }
-        for (k = 11; k < 17; k++) {
-            screen_outlet_4[k] = res_p_3_1[k-11];
+        for (k = 13; k < 19; k++) {
+            screen_outlet_4[k] = res_p_3_1[k-13];
         }
         break;
     case 4:
-        for (i = 9; i < 15; i++) {
-            screen_outlet_2[i] = res_v_2[i-9];
+        for (i = 11; i < 17; i++) {
+            screen_outlet_2[i] = res_v_2[i-11];
         }
-        for (j = 9; j < 15; j++) {
-            screen_outlet_3[j] = res_i_1_2[j-9];
+        for (j = 11; j < 17; j++) {
+            screen_outlet_3[j] = res_i_1_2[j-11];
         }
-        for (k = 11; k < 17; k++) {
-            screen_outlet_4[k] = res_p_1_2[k-11];
+        for (k = 13; k < 19; k++) {
+            screen_outlet_4[k] = res_p_1_2[k-13];
         }
         break;
     case 5:
-        for (i = 9; i < 15; i++) {
-            screen_outlet_2[i] = res_v_2[i-9];
+        for (i = 11; i < 17; i++) {
+            screen_outlet_2[i] = res_v_2[i-11];
         }
-        for (j = 9; j < 15; j++) {
-            screen_outlet_3[j] = res_i_2_2[j-9];
+        for (j = 11; j < 17; j++) {
+            screen_outlet_3[j] = res_i_2_2[j-11];
         }
-        for (k = 11; k < 17; k++) {
-            screen_outlet_4[k] = res_p_2_2[k-11];
+        for (k = 13; k < 19; k++) {
+            screen_outlet_4[k] = res_p_2_2[k-13];
         }
         break;
     case 6:
-        for (i = 9; i < 15; i++) {
-            screen_outlet_2[i] = res_v_2[i-9];
+        for (i = 11; i < 17; i++) {
+            screen_outlet_2[i] = res_v_2[i-11];
         }
-        for (j = 9; j < 15; j++) {
-            screen_outlet_3[j] = res_i_3_2[j-9];
+        for (j = 11; j < 17; j++) {
+            screen_outlet_3[j] = res_i_3_2[j-11];
         }
-        for (k = 11; k < 17; k++) {
-            screen_outlet_4[k] = res_p_3_2[k-11];
+        for (k = 13; k < 19; k++) {
+            screen_outlet_4[k] = res_p_3_2[k-13];
         }
         break;
     case 7:
-        for (i = 9; i < 15; i++) {
-            screen_outlet_2[i] = res_v_3[i-9];
+        for (i = 11; i < 17; i++) {
+            screen_outlet_2[i] = res_v_3[i-11];
         }
-        for (j = 9; j < 15; j++) {
-            screen_outlet_3[j] = res_i_1_3[j-9];
+        for (j = 11; j < 17; j++) {
+            screen_outlet_3[j] = res_i_1_3[j-11];
         }
-        for (k = 11; k < 17; k++) {
-            screen_outlet_4[k] = res_p_1_3[k-11];
+        for (k = 13; k < 19; k++) {
+            screen_outlet_4[k] = res_p_1_3[k-13];
         }
         break;
     case 8:
-        for (i = 9; i < 15; i++) {
-            screen_outlet_2[i] = res_v_3[i-9];
+        for (i = 11; i < 17; i++) {
+            screen_outlet_2[i] = res_v_3[i-11];
         }
-        for (j = 9; j < 15; j++) {
-            screen_outlet_3[j] = res_i_2_3[j-9];
+        for (j = 11; j < 17; j++) {
+            screen_outlet_3[j] = res_i_2_3[j-11];
         }
-        for (k = 11; k < 17; k++) {
-            screen_outlet_4[k] = res_p_2_3[k-11];
+        for (k = 13; k < 19; k++) {
+            screen_outlet_4[k] = res_p_2_3[k-13];
         }
         break;
     case 9:
-        for (i = 9; i < 15; i++) {
-            screen_outlet_2[i] = res_v_3[i-9];
+        for (i = 11; i < 17; i++) {
+            screen_outlet_2[i] = res_v_3[i-11];
         }
-        for (j = 9; j < 15; j++) {
-            screen_outlet_3[j] = res_i_3_3[j-9];
+        for (j = 11; j < 17; j++) {
+            screen_outlet_3[j] = res_i_3_3[j-11];
         }
-        for (k = 11; k < 17; k++) {
-            screen_outlet_4[k] = res_p_3_3[k-11];
+        for (k = 13; k < 19; k++) {
+            screen_outlet_4[k] = res_p_3_3[k-13];
         }
         break;
     case 10:
-        for (i = 9; i < 15; i++) {
-            screen_outlet_2[i] = res_v_4[i-9];
+        for (i = 11; i < 17; i++) {
+            screen_outlet_2[i] = res_v_4[i-11];
         }
-        for (j = 9; j < 15; j++) {
-            screen_outlet_3[j] = res_i_1_4[j-9];
+        for (j = 11; j < 17; j++) {
+            screen_outlet_3[j] = res_i_1_4[j-11];
         }
-        for (k = 11; k < 17; k++) {
-            screen_outlet_4[k] = res_p_1_4[k-11];
+        for (k = 13; k < 19; k++) {
+            screen_outlet_4[k] = res_p_1_4[k-13];
         }
         break;
     case 11:
-        for (i = 9; i < 15; i++) {
-            screen_outlet_2[i] = res_v_4[i-9];
+        for (i = 11; i < 17; i++) {
+            screen_outlet_2[i] = res_v_4[i-11];
         }
-        for (j = 9; j < 15; j++) {
-            screen_outlet_3[j] = res_i_2_4[j-9];
+        for (j = 11; j < 17; j++) {
+            screen_outlet_3[j] = res_i_2_4[j-11];
         }
-        for (k = 11; k < 17; k++) {
-            screen_outlet_4[k] = res_p_2_4[k-11];
+        for (k = 13; k < 19; k++) {
+            screen_outlet_4[k] = res_p_2_4[k-13];
         }
         break;
     case 12:
-        for (i = 9; i < 15; i++) {
-            screen_outlet_2[i] = res_v_4[i-9];
+        for (i = 11; i < 17; i++) {
+            screen_outlet_2[i] = res_v_4[i-11];
         }
-        for (j = 9; j < 15; j++) {
-            screen_outlet_3[j] = res_i_3_4[j-9];
+        for (j = 11; j < 17; j++) {
+            screen_outlet_3[j] = res_i_3_4[j-11];
         }
-        for (k = 11; k < 17; k++) {
-            screen_outlet_4[k] = res_p_3_4[k-11];
+        for (k = 13; k < 19; k++) {
+            screen_outlet_4[k] = res_p_3_4[k-13];
         }
         break;
     }
